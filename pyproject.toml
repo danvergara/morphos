@@ -1,0 +1,16 @@
+[tool.poetry]
+name = "morphos"
+version = "0.0.0"
+description = ""
+authors = ["Arturomtz <arturo.mtz8@gmail.com>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.9"
+fpdf = "^1.7.2"
+cchardet = "^2.1.7"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
