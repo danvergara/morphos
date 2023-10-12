@@ -1,7 +1,6 @@
 package main
 
 import (
-	"bufio"
 	"bytes"
 	"fmt"
 	"image/jpeg"
@@ -9,73 +8,91 @@ import (
 	"io"
 	"net/http"
 	"os"
+	"path/filepath"
+	"strings"
+
+	"github.com/go-chi/chi/v5"
+	"github.com/go-chi/chi/v5/middleware"
 )
 
-const uploadPath = "./upload"
+const (
+	uploadPath          = "/tmp"
+	uploadFileFormField = "uploadFile"
+)
 
-func handleUploadFile(_ http.ResponseWriter, r *http.Request) {
-	r.ParseMultipartForm(100)
-	mForm := r.MultipartForm
+func handleUploadFile(w http.ResponseWriter, r *http.Request) {
+	var (
+		convertedFile     []byte
+		convertedFilePath string
+		err               error
+	)
 
-	for k := range mForm.File {
-		// k is the key of file part
-		file, fileHeader, err := r.FormFile(k)
-		if err != nil {
-			fmt.Println("inovke FormFile error:", err)
-			return
-		}
-		defer file.Close()
-		fmt.Printf("the uploaded file: name[%s], size[%d], header[%#v]\n", fileHeader.Filename, fileHeader.Size, fileHeader.Header)
-
-		f, ok := file.(*os.File)
-		if !ok {
-			fmt.Printf("not a file \n")
-		}
-		// Get the file size
-		stat, err := f.Stat()
-		if err != nil {
-			fmt.Println(err)
-			return
-		}
-
-		// Read the file into a byte slice
-		bs := make([]byte, stat.Size())
-		_, err = bufio.NewReader(file).Read(bs)
-		if err != nil && err != io.EOF {
-			fmt.Println(err)
-			return
-		}
-
-		contentType := http.DetectContentType(bs)
-
-		switch contentType {
-		case "image/png":
-			_, err = ToJpeg(bs)
-			if err != nil {
-				fmt.Println(err)
-				return
-			}
-		case "image/jpeg":
-			fmt.Println("jpeg converted")
-			_, err = JpegToPng(bs)
-			if err != nil {
-				fmt.Println(err)
-				return
-			}
-		}
-
-		fmt.Printf("file %T uploaded ok\n", file)
+	// parse and validate file and post parameters.
+	file, fileHeader, err := r.FormFile(uploadFileFormField)
+	if err != nil {
+		renderError(w, "INVALID_FILE", http.StatusBadRequest)
+		return
 	}
+	defer file.Close()
+
+	fileBytes, err := io.ReadAll(file)
+	if err != nil {
+		renderError(w, "INVALID_FILE", http.StatusBadRequest)
+		return
+	}
+
+	detectedFileType := http.DetectContentType(fileBytes)
+	switch detectedFileType {
+	case "image/jpeg", "image/jpg":
+		convertedFile, err = JpegToPng(fileBytes)
+		if err != nil {
+			renderError(w, "INVALID_FILE", http.StatusBadRequest)
+			return
+		}
+
+		convertedFilePath = filepath.Join(uploadPath, fmt.Sprintf("%s.%s", fileNameWithoutExtension(fileHeader.Filename), "png"))
+	case "image/png":
+		convertedFile, err = PngToJpeg(fileBytes)
+		if err != nil {
+			renderError(w, "INVALID_FILE", http.StatusBadRequest)
+			return
+		}
+
+		convertedFilePath = filepath.Join(uploadPath, fmt.Sprintf("%s.%s", fileNameWithoutExtension(fileHeader.Filename), "jpg"))
+	default:
+		renderError(w, "INVALID_FILE_TYPE", http.StatusBadRequest)
+		return
+	}
+
+	newFile, err := os.Create(convertedFilePath)
+	if err != nil {
+		renderError(w, "CANT_WRITE_FILE", http.StatusInternalServerError)
+		return
+	}
+	defer newFile.Close()
+	if _, err := newFile.Write(convertedFile); err != nil {
+		renderError(w, "CANT_WRITE_FILE", http.StatusInternalServerError)
+		return
+	}
+
+	w.Write([]byte("SUCCESS"))
 }
 
 func main() {
-	http.HandleFunc("/upload", handleUploadFile)
-	http.ListenAndServe(":8080", nil)
+	r := chi.NewRouter()
+	r.Use(middleware.Logger)
+
+	fs := http.FileServer(http.Dir(uploadPath))
+	r.Handle("/files/*", http.StripPrefix("/files", fs))
+
+	r.Post("/upload", handleUploadFile)
+
+	http.ListenAndServe("localhost:8080", r)
 }
 
-// ToJpeg converts a PNG image to JPEG format
-func ToJpeg(imageBytes []byte) ([]byte, error) {
-	// Decode the PNG image bytes
+// PngToJpeg converts a PNG image to JPEG format.
+func PngToJpeg(imageBytes []byte) ([]byte, error) {
+	// Decode the PNG image bytes.
 	img, err := png.Decode(bytes.NewReader(imageBytes))
 
 	if err != nil {
@@ -84,16 +101,15 @@ func ToJpeg(imageBytes []byte) ([]byte, error) {
 
 	buf := new(bytes.Buffer)
 
-	// encode the image as a JPEG file
+	// encode the image as a JPEG file.
 	if err := jpeg.Encode(buf, img, nil); err != nil {
 		return nil, err
 	}
 
 	return buf.Bytes(), nil
-
 }
 
-// JpegToPng converts a JPEG image to PNG format
+// JpegToPng converts a JPEG image to PNG format.
 func JpegToPng(imageBytes []byte) ([]byte, error) {
 	img, err := jpeg.Decode(bytes.NewReader(imageBytes))
 
@@ -108,4 +124,13 @@ func JpegToPng(imageBytes []byte) ([]byte, error) {
 	}
 
 	return buf.Bytes(), nil
+}
+
+func renderError(w http.ResponseWriter, message string, statusCode int) {
+	w.WriteHeader(statusCode)
+	w.Write([]byte(message))
+}
+
+func fileNameWithoutExtension(fileName string) string {
+	return strings.TrimSuffix(filepath.Base(fileName), filepath.Ext(fileName))
 }
