@@ -1,10 +1,7 @@
 package main
 
 import (
-	"bytes"
 	"fmt"
-	"image/jpeg"
-	"image/png"
 	"io"
 	"net/http"
 	"os"
@@ -13,6 +10,8 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
+
+	"github.com/danvergara/morphos/pkg/image"
 )
 
 const (
@@ -44,7 +43,7 @@ func handleUploadFile(w http.ResponseWriter, r *http.Request) {
 	detectedFileType := http.DetectContentType(fileBytes)
 	switch detectedFileType {
 	case "image/jpeg", "image/jpg":
-		convertedFile, err = JpegToPng(fileBytes)
+		convertedFile, err = image.JpegToPng(fileBytes)
 		if err != nil {
 			renderError(w, "INVALID_FILE", http.StatusBadRequest)
 			return
@@ -52,7 +51,7 @@ func handleUploadFile(w http.ResponseWriter, r *http.Request) {
 
 		convertedFilePath = filepath.Join(uploadPath, fmt.Sprintf("%s.%s", fileNameWithoutExtension(fileHeader.Filename), "png"))
 	case "image/png":
-		convertedFile, err = PngToJpeg(fileBytes)
+		convertedFile, err = image.PngToJpeg(fileBytes)
 		if err != nil {
 			renderError(w, "INVALID_FILE", http.StatusBadRequest)
 			return
@@ -88,42 +87,6 @@ func main() {
 	r.Post("/upload", handleUploadFile)
 
 	http.ListenAndServe("localhost:8080", r)
-}
-
-// PngToJpeg converts a PNG image to JPEG format.
-func PngToJpeg(imageBytes []byte) ([]byte, error) {
-	// Decode the PNG image bytes.
-	img, err := png.Decode(bytes.NewReader(imageBytes))
-
-	if err != nil {
-		return nil, err
-	}
-
-	buf := new(bytes.Buffer)
-
-	// encode the image as a JPEG file.
-	if err := jpeg.Encode(buf, img, nil); err != nil {
-		return nil, err
-	}
-
-	return buf.Bytes(), nil
-}
-
-// JpegToPng converts a JPEG image to PNG format.
-func JpegToPng(imageBytes []byte) ([]byte, error) {
-	img, err := jpeg.Decode(bytes.NewReader(imageBytes))
-
-	if err != nil {
-		return nil, err
-	}
-
-	buf := new(bytes.Buffer)
-
-	if err := png.Encode(buf, img); err != nil {
-		return nil, err
-	}
-
-	return buf.Bytes(), nil
 }
 
 func renderError(w http.ResponseWriter, message string, statusCode int) {
