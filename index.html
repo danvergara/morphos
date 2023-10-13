@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <title></title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <script src="https://unpkg.com/htmx.org@1.9.6" integrity="sha384-FhXw7b6AlE/jyjlZH5iHa/tTe9EpJ1Y55RjcgPbjeWMskSxZt1v9qkxLJWNJaGni" crossorigin="anonymous"></script>
+  </head>
+  <body>
+    <form id='form' hx-encoding='multipart/form-data' hx-post='/upload' hx-swap='outerHTML' hx-indicator='#progress'>
+      <input type="file" name="uploadFile" />
+      <button >
+        Upload
+      </button>
+      <progress id='progress' class='htmx-indicator' value='0' max='100'></progress>
+    </form>
+    <script>
+        htmx.on('#form', 'htmx:xhr:progress', function(evt) {
+          htmx.find('#progress').setAttribute('value', evt.detail.loaded/evt.detail.total * 100)
+        });
+    </script>
+  </body>
+</html>

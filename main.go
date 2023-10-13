@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"html/template"
 	"io"
 	"net/http"
 	"os"
@@ -19,10 +20,16 @@ const (
 	uploadFileFormField = "uploadFile"
 )
 
+func index(w http.ResponseWriter, _ *http.Request) {
+	tmpl, _ := template.ParseFiles("index.html")
+	tmpl.ExecuteTemplate(w, "index.html", nil)
+}
+
 func handleUploadFile(w http.ResponseWriter, r *http.Request) {
 	var (
 		convertedFile     []byte
 		convertedFilePath string
+		convertedFileName string
 		err               error
 	)
 
@@ -49,7 +56,8 @@ func handleUploadFile(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		convertedFilePath = filepath.Join(uploadPath, fmt.Sprintf("%s.%s", fileNameWithoutExtension(fileHeader.Filename), "png"))
+		convertedFileName = filename(fileHeader.Filename, "png")
+		convertedFilePath = filepath.Join(uploadPath, convertedFileName)
 	case "image/png":
 		convertedFile, err = image.PngToJpeg(fileBytes)
 		if err != nil {
@@ -57,7 +65,8 @@ func handleUploadFile(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		convertedFilePath = filepath.Join(uploadPath, fmt.Sprintf("%s.%s", fileNameWithoutExtension(fileHeader.Filename), "jpg"))
+		convertedFileName = filename(fileHeader.Filename, "jpg")
+		convertedFilePath = filepath.Join(uploadPath, convertedFileName)
 	default:
 		renderError(w, "INVALID_FILE_TYPE", http.StatusBadRequest)
 		return
@@ -74,7 +83,9 @@ func handleUploadFile(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	w.Write([]byte("SUCCESS"))
+	htmlStr := fmt.Sprintf("<a href='/files/%s' download><button>download %s</button></a>", convertedFileName, convertedFileName)
+	tmpl := template.Must(template.New("t").Parse(htmlStr))
+	tmpl.Execute(w, nil)
 }
 
 func main() {
@@ -82,8 +93,9 @@ func main() {
 	r.Use(middleware.Logger)
 
 	fs := http.FileServer(http.Dir(uploadPath))
-	r.Handle("/files/*", http.StripPrefix("/files", fs))
 
+	r.Handle("/files/*", http.StripPrefix("/files", fs))
+	r.Get("/", index)
 	r.Post("/upload", handleUploadFile)
 
 	http.ListenAndServe("localhost:8080", r)
@@ -96,4 +108,8 @@ func renderError(w http.ResponseWriter, message string, statusCode int) {
 
 func fileNameWithoutExtension(fileName string) string {
 	return strings.TrimSuffix(filepath.Base(fileName), filepath.Ext(fileName))
+}
+
+func filename(filename, extension string) string {
+	return fmt.Sprintf("%s.%s", fileNameWithoutExtension(filename), extension)
 }
