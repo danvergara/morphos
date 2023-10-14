@@ -83,7 +83,7 @@ func handleUploadFile(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	htmlStr := fmt.Sprintf("<a href='/files/%s' download><button>download %s</button></a>", convertedFileName, convertedFileName)
+	htmlStr := fmt.Sprintf("<a href='/files/%s' download><button class='btn btn-success'>Download %s</button></a>", convertedFileName, convertedFileName)
 	tmpl := template.Must(template.New("t").Parse(htmlStr))
 	tmpl.Execute(w, nil)
 }
