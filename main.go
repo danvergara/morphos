@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"html/template"
 	"io"
+	"log"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -20,9 +21,32 @@ const (
 	uploadFileFormField = "uploadFile"
 )
 
+type ConvertedFile struct {
+	Filename string
+}
+
 func index(w http.ResponseWriter, _ *http.Request) {
-	tmpl, _ := template.ParseFiles("index.html")
-	tmpl.ExecuteTemplate(w, "index.html", nil)
+	files := []string{
+		"./templates/base.tmpl",
+		"./templates/partials/htmx.tmpl",
+		"./templates/partials/style.tmpl",
+		"./templates/partials/nav.tmpl",
+		"./templates/partials/form.tmpl",
+		"./templates/partials/modal.tmpl",
+		"./templates/partials/js.tmpl",
+	}
+
+	tmpl, err := template.ParseFiles(files...)
+	if err != nil {
+		renderError(w, "INTERNAL_ERROR", http.StatusInternalServerError)
+		return
+	}
+
+	err = tmpl.ExecuteTemplate(w, "base", nil)
+	if err != nil {
+		renderError(w, "INTERNAL_ERROR", http.StatusInternalServerError)
+		return
+	}
 }
 
 func handleUploadFile(w http.ResponseWriter, r *http.Request) {
@@ -74,6 +98,7 @@ func handleUploadFile(w http.ResponseWriter, r *http.Request) {
 
 	newFile, err := os.Create(convertedFilePath)
 	if err != nil {
+		log.Printf("error occurred converting file: %v", err)
 		renderError(w, "CANT_WRITE_FILE", http.StatusInternalServerError)
 		return
 	}
@@ -83,9 +108,46 @@ func handleUploadFile(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	htmlStr := fmt.Sprintf("<a href='/files/%s' download><button class='btn btn-success'>Download %s</button></a>", convertedFileName, convertedFileName)
-	tmpl := template.Must(template.New("t").Parse(htmlStr))
-	tmpl.Execute(w, nil)
+	files := []string{
+		"./templates/partials/card_file.tmpl",
+		"./templates/partials/modal.tmpl",
+	}
+
+	tmpl, err := template.ParseFiles(files...)
+	if err != nil {
+		log.Printf("error occurred parsing template files: %v", err)
+		renderError(w, "INTERNAL_ERROR", http.StatusInternalServerError)
+		return
+	}
+
+	err = tmpl.ExecuteTemplate(w, "content", ConvertedFile{Filename: convertedFileName})
+	if err != nil {
+		log.Printf("error occurred executing template files: %v", err)
+		renderError(w, "INTERNAL_ERROR", http.StatusInternalServerError)
+		return
+	}
+}
+
+func handleModal(w http.ResponseWriter, r *http.Request) {
+	filename := r.URL.Query().Get("filename")
+
+	files := []string{
+		"./templates/partials/active_modal.tmpl",
+	}
+
+	tmpl, err := template.ParseFiles(files...)
+	if err != nil {
+		log.Printf("error occurred parsing template files: %v", err)
+		renderError(w, "INTERNAL_ERROR", http.StatusInternalServerError)
+		return
+	}
+
+	err = tmpl.ExecuteTemplate(w, "content", ConvertedFile{Filename: filename})
+	if err != nil {
+		log.Printf("error occurred executing template files: %v", err)
+		renderError(w, "INTERNAL_ERROR", http.StatusInternalServerError)
+		return
+	}
 }
 
 func main() {
@@ -97,6 +159,7 @@ func main() {
 	r.Handle("/files/*", http.StripPrefix("/files", fs))
 	r.Get("/", index)
 	r.Post("/upload", handleUploadFile)
+	r.Get("/modal", handleModal)
 
 	http.ListenAndServe("localhost:8080", r)
 }
