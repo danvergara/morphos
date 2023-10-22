@@ -1,0 +1,19 @@
+{{define "base"}}
+<html>
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{{template "title" .}}</title>
+    {{template "htmx" .}}
+    {{template "style" .}}
+  </head>
+  <body>
+    {{template "nav" .}}
+    <main>
+      {{template "content" .}}
+    </main>
+    {{template "modal"}}
+    {{template "js" .}}
+  </body>
+</html>
+{{end}}

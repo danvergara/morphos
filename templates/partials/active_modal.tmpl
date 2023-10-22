@@ -1,0 +1,23 @@
+{{define "title"}}Download your file{{end}}
+{{define "content"}}
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">{{ .Filename }}</h5>
+      </div>
+      <div class="modal-body">
+        <img src="/files/{{ .Filename }}" class="img-fluid" alt="Responsive image">
+      </div>
+      <div class="modal-footer">
+        <a href="/files/{{ .Filename }}" download>
+          <button class="btn btn-success">
+            Download {{ .Filename }}
+          </button>
+        </a>
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+          Close
+        </button>
+      </div>
+    </div>
+  </div>
+{{end}}

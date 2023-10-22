@@ -1,0 +1,20 @@
+{{define "title"}}Convert your file{{end}}
+
+{{define "content"}}
+  <div class="row align-items-center" style="height: 50vh;">
+    <div class="mx-auto col-10 col-md-8 col-lg-6">
+    <form id="form" hx-encoding="multipart/form-data" hx-post="/upload" hx-swap="outerHTML" hx-indicator="#spinner">
+      <h2>File Converter</h2>
+      <div class="mb-3">
+        <label for="formFile" class="form-label">Upload your file</label>
+        <input class="form-control" type="file" id="formFile" name="uploadFile" />
+      </div>
+      <button class="btn btn-primary">
+        <span class="spinner-border spinner-border-sm htmx-indicator" id="spinner" role="status" aria-hidden="true"></span>
+        Upload
+      </button>
+      <progress id='progress' class='htmx-indicator' value='0' max='100'></progress>
+      </form>
+    </div>
+  </div>
+{{end}}
