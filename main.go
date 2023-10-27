@@ -25,6 +25,11 @@ type ConvertedFile struct {
 	Filename string
 }
 
+type FileFormat struct {
+	Name string
+	ID   int
+}
+
 func index(w http.ResponseWriter, _ *http.Request) {
 	files := []string{
 		"./templates/base.tmpl",
@@ -38,12 +43,14 @@ func index(w http.ResponseWriter, _ *http.Request) {
 
 	tmpl, err := template.ParseFiles(files...)
 	if err != nil {
+		log.Printf("error ocurred parsing templates: %v", err)
 		renderError(w, "INTERNAL_ERROR", http.StatusInternalServerError)
 		return
 	}
 
 	err = tmpl.ExecuteTemplate(w, "base", nil)
 	if err != nil {
+		log.Printf("error ocurred executing template: %v", err)
 		renderError(w, "INTERNAL_ERROR", http.StatusInternalServerError)
 		return
 	}
@@ -60,6 +67,7 @@ func handleUploadFile(w http.ResponseWriter, r *http.Request) {
 	// parse and validate file and post parameters.
 	file, fileHeader, err := r.FormFile(uploadFileFormField)
 	if err != nil {
+		log.Printf("error ocurred getting file from form: %v", err)
 		renderError(w, "INVALID_FILE", http.StatusBadRequest)
 		return
 	}
@@ -67,31 +75,36 @@ func handleUploadFile(w http.ResponseWriter, r *http.Request) {
 
 	fileBytes, err := io.ReadAll(file)
 	if err != nil {
+		log.Printf("error ocurred reading file: %v", err)
 		renderError(w, "INVALID_FILE", http.StatusBadRequest)
 		return
 	}
 
-	detectedFileType := http.DetectContentType(fileBytes)
-	switch detectedFileType {
-	case "image/jpeg", "image/jpg":
-		convertedFile, err = image.JpegToPng(fileBytes)
-		if err != nil {
-			renderError(w, "INVALID_FILE", http.StatusBadRequest)
-			return
-		}
+	fileType := r.FormValue("input_format")
 
-		convertedFileName = filename(fileHeader.Filename, "png")
-		convertedFilePath = filepath.Join(uploadPath, convertedFileName)
-	case "image/png":
+	switch fileType {
+	case "jpeg", "jpg":
 		convertedFile, err = image.PngToJpeg(fileBytes)
 		if err != nil {
+			log.Printf("error ocurred while converting image %v", err)
 			renderError(w, "INVALID_FILE", http.StatusBadRequest)
 			return
 		}
 
 		convertedFileName = filename(fileHeader.Filename, "jpg")
 		convertedFilePath = filepath.Join(uploadPath, convertedFileName)
+	case "png":
+		convertedFile, err = image.JpegToPng(fileBytes)
+		if err != nil {
+			log.Printf("error ocurred while converting image %v", err)
+			renderError(w, "INVALID_FILE", http.StatusBadRequest)
+			return
+		}
+
+		convertedFileName = filename(fileHeader.Filename, "png")
+		convertedFilePath = filepath.Join(uploadPath, convertedFileName)
 	default:
+		log.Printf("error not supported image format %s", fileType)
 		renderError(w, "INVALID_FILE_TYPE", http.StatusBadRequest)
 		return
 	}
@@ -104,6 +117,7 @@ func handleUploadFile(w http.ResponseWriter, r *http.Request) {
 	}
 	defer newFile.Close()
 	if _, err := newFile.Write(convertedFile); err != nil {
+		log.Printf("error occurred writing file: %v", err)
 		renderError(w, "CANT_WRITE_FILE", http.StatusInternalServerError)
 		return
 	}
@@ -124,6 +138,53 @@ func handleUploadFile(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		log.Printf("error occurred executing template files: %v", err)
 		renderError(w, "INTERNAL_ERROR", http.StatusInternalServerError)
+		return
+	}
+}
+
+func handleFileFormat(w http.ResponseWriter, r *http.Request) {
+	formats := make(map[string][]FileFormat)
+
+	file, _, err := r.FormFile(uploadFileFormField)
+	if err != nil {
+		log.Printf("error ocurred getting file from form: %v", err)
+		renderError(w, "INVALID_FILE", http.StatusBadRequest)
+		return
+	}
+
+	fileBytes, err := io.ReadAll(file)
+	if err != nil {
+		log.Printf("error occurred executing template files: %v", err)
+		renderError(w, "INVALID_FILE", http.StatusBadRequest)
+		return
+	}
+
+	detectedFileType := http.DetectContentType(fileBytes)
+
+	files := []string{
+		"./templates/partials/form.tmpl",
+	}
+
+	tmpl, err := template.ParseFiles(files...)
+	switch detectedFileType {
+	case "image/jpeg", "image/jpg":
+		formats = map[string][]FileFormat{
+			"Formats": {
+				{ID: 0, Name: "png"},
+			},
+		}
+	case "image/png":
+		formats = map[string][]FileFormat{
+			"Formats": {
+				{ID: 0, Name: "jpg"},
+			},
+		}
+	}
+
+	err = tmpl.ExecuteTemplate(w, "format-elements", formats)
+	if err != nil {
+		log.Printf("error occurred parsing template files: %v", err)
+		renderError(w, "FINTERNAL_ERROR", http.StatusInternalServerError)
 		return
 	}
 }
@@ -159,6 +220,7 @@ func main() {
 	r.Handle("/files/*", http.StripPrefix("/files", fs))
 	r.Get("/", index)
 	r.Post("/upload", handleUploadFile)
+	r.Post("/format", handleFileFormat)
 	r.Get("/modal", handleModal)
 
 	http.ListenAndServe("localhost:8080", r)
