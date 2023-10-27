@@ -1,20 +1,46 @@
-{{define "title"}}Convert your file{{end}}
+{{define "title"}}Upload your file{{end}}
 
 {{define "content"}}
-  <div class="row align-items-center" style="height: 50vh;">
-    <div class="mx-auto col-10 col-md-8 col-lg-6">
-    <form id="form" hx-encoding="multipart/form-data" hx-post="/upload" hx-swap="outerHTML" hx-indicator="#spinner">
+<div class="row align-items-center" style="height: 50vh;">
+  <div class="mx-auto col-10 col-md-8 col-lg-6">
+    <form id="form"
+          hx-encoding="multipart/form-data"
+          hx-post="/upload"
+          hx-swap="outerHTML"
+          hx-indicator="#spinner">
       <h2>File Converter</h2>
-      <div class="mb-3">
-        <label for="formFile" class="form-label">Upload your file</label>
-        <input class="form-control" type="file" id="formFile" name="uploadFile" />
+      <div class="row g-3">
+        <div class="col-sm-7">
+          <label for="formFile" class="form-label">Upload your file</label>
+          <input class="form-control"
+                 hx-post="/format"
+                 hx-trigger="change"
+                 hx-target="#input-format"
+                 hx-swap="innerHTML"
+                 type="file"
+                 id="formFile"
+                 name="uploadFile"/>
+        </div>
+        <div class="col-sm">
+          <label for="input-format" class="form-label">Formats to convert</label>
+          <select id="input-format" class="form-select" name="input_format">
+            <option selected>...</option>
+            {{ block "format-elements" . }}
+              {{ range $element := .Formats }}
+                <option value="{{ $element.Name }}">{{ $element.Name }}</option>
+              {{ end }}
+            {{ end}}
+          </select>
+        </div>
+        <div class="col-sm-12">
+          <button class="btn btn-primary">
+          <span class="spinner-border spinner-border-sm htmx-indicator" id="spinner" role="status" aria-hidden="true"></span>
+            Upload
+          </button>
+          <progress id='progress' class='htmx-indicator' value='0' max='100'></progress>
+        </div>
       </div>
-      <button class="btn btn-primary">
-        <span class="spinner-border spinner-border-sm htmx-indicator" id="spinner" role="status" aria-hidden="true"></span>
-        Upload
-      </button>
-      <progress id='progress' class='htmx-indicator' value='0' max='100'></progress>
-      </form>
-    </div>
+    </form>
   </div>
+</div>
 {{end}}
