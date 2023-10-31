@@ -1,6 +1,7 @@
 package main
 
 import (
+	"embed"
 	"fmt"
 	"html/template"
 	"io"
@@ -21,6 +22,14 @@ const (
 	uploadFileFormField = "uploadFile"
 )
 
+var (
+	//go:embed all:templates
+	templatesHTML embed.FS
+
+	//go:embed all:static
+	staticFiles embed.FS
+)
+
 type ConvertedFile struct {
 	Filename string
 }
@@ -32,16 +41,16 @@ type FileFormat struct {
 
 func index(w http.ResponseWriter, _ *http.Request) {
 	files := []string{
-		"./templates/base.tmpl",
-		"./templates/partials/htmx.tmpl",
-		"./templates/partials/style.tmpl",
-		"./templates/partials/nav.tmpl",
-		"./templates/partials/form.tmpl",
-		"./templates/partials/modal.tmpl",
-		"./templates/partials/js.tmpl",
+		"templates/base.tmpl",
+		"templates/partials/htmx.tmpl",
+		"templates/partials/style.tmpl",
+		"templates/partials/nav.tmpl",
+		"templates/partials/form.tmpl",
+		"templates/partials/modal.tmpl",
+		"templates/partials/js.tmpl",
 	}
 
-	tmpl, err := template.ParseFiles(files...)
+	tmpl, err := template.ParseFS(templatesHTML, files...)
 	if err != nil {
 		log.Printf("error ocurred parsing templates: %v", err)
 		renderError(w, "INTERNAL_ERROR", http.StatusInternalServerError)
@@ -123,11 +132,11 @@ func handleUploadFile(w http.ResponseWriter, r *http.Request) {
 	}
 
 	files := []string{
-		"./templates/partials/card_file.tmpl",
-		"./templates/partials/modal.tmpl",
+		"templates/partials/card_file.tmpl",
+		"templates/partials/modal.tmpl",
 	}
 
-	tmpl, err := template.ParseFiles(files...)
+	tmpl, err := template.ParseFS(templatesHTML, files...)
 	if err != nil {
 		log.Printf("error occurred parsing template files: %v", err)
 		renderError(w, "INTERNAL_ERROR", http.StatusInternalServerError)
@@ -162,10 +171,10 @@ func handleFileFormat(w http.ResponseWriter, r *http.Request) {
 	detectedFileType := http.DetectContentType(fileBytes)
 
 	files := []string{
-		"./templates/partials/form.tmpl",
+		"templates/partials/form.tmpl",
 	}
 
-	tmpl, err := template.ParseFiles(files...)
+	tmpl, err := template.ParseFS(templatesHTML, files...)
 	switch detectedFileType {
 	case "image/jpeg", "image/jpg":
 		formats = map[string][]FileFormat{
@@ -193,10 +202,10 @@ func handleModal(w http.ResponseWriter, r *http.Request) {
 	filename := r.URL.Query().Get("filename")
 
 	files := []string{
-		"./templates/partials/active_modal.tmpl",
+		"templates/partials/active_modal.tmpl",
 	}
 
-	tmpl, err := template.ParseFiles(files...)
+	tmpl, err := template.ParseFS(templatesHTML, files...)
 	if err != nil {
 		log.Printf("error occurred parsing template files: %v", err)
 		renderError(w, "INTERNAL_ERROR", http.StatusInternalServerError)
@@ -215,9 +224,13 @@ func main() {
 	r := chi.NewRouter()
 	r.Use(middleware.Logger)
 
-	fs := http.FileServer(http.Dir(uploadPath))
+	fsUpload := http.FileServer(http.Dir(uploadPath))
 
-	r.Handle("/files/*", http.StripPrefix("/files", fs))
+	var staticFS = http.FS(staticFiles)
+	fs := http.FileServer(staticFS)
+
+	r.Handle("/static/*", fs)
+	r.Handle("/files/*", http.StripPrefix("/files", fsUpload))
 	r.Get("/", index)
 	r.Post("/upload", handleUploadFile)
 	r.Post("/format", handleFileFormat)
