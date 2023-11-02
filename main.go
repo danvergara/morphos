@@ -14,7 +14,7 @@ import (
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 
-	"github.com/danvergara/morphos/pkg/image"
+	"github.com/danvergara/morphos/pkg/files/images"
 )
 
 const (
@@ -91,32 +91,16 @@ func handleUploadFile(w http.ResponseWriter, r *http.Request) {
 
 	fileType := r.FormValue("input_format")
 
-	switch fileType {
-	case "jpeg", "jpg":
-		convertedFile, err = image.PngToJpeg(fileBytes)
-		if err != nil {
-			log.Printf("error ocurred while converting image %v", err)
-			renderError(w, "INVALID_FILE", http.StatusBadRequest)
-			return
-		}
-
-		convertedFileName = filename(fileHeader.Filename, "jpg")
-		convertedFilePath = filepath.Join(uploadPath, convertedFileName)
-	case "png":
-		convertedFile, err = image.JpegToPng(fileBytes)
-		if err != nil {
-			log.Printf("error ocurred while converting image %v", err)
-			renderError(w, "INVALID_FILE", http.StatusBadRequest)
-			return
-		}
-
-		convertedFileName = filename(fileHeader.Filename, "png")
-		convertedFilePath = filepath.Join(uploadPath, convertedFileName)
-	default:
-		log.Printf("error not supported image format %s", fileType)
-		renderError(w, "INVALID_FILE_TYPE", http.StatusBadRequest)
+	detectedFileType := http.DetectContentType(fileBytes)
+	convertedFile, err = images.ConverImage(detectedFileType, fileType, fileBytes)
+	if err != nil {
+		log.Printf("error ocurred while converting image %v", err)
+		renderError(w, "INVALID_FILE", http.StatusBadRequest)
 		return
 	}
+
+	convertedFileName = filename(fileHeader.Filename, fileType)
+	convertedFilePath = filepath.Join(uploadPath, convertedFileName)
 
 	newFile, err := os.Create(convertedFilePath)
 	if err != nil {
@@ -152,7 +136,6 @@ func handleUploadFile(w http.ResponseWriter, r *http.Request) {
 }
 
 func handleFileFormat(w http.ResponseWriter, r *http.Request) {
-	formats := make(map[string][]FileFormat)
 
 	file, _, err := r.FormFile(uploadFileFormField)
 	if err != nil {
@@ -175,20 +158,7 @@ func handleFileFormat(w http.ResponseWriter, r *http.Request) {
 	}
 
 	tmpl, err := template.ParseFS(templatesHTML, files...)
-	switch detectedFileType {
-	case "image/jpeg", "image/jpg":
-		formats = map[string][]FileFormat{
-			"Formats": {
-				{ID: 0, Name: "png"},
-			},
-		}
-	case "image/png":
-		formats = map[string][]FileFormat{
-			"Formats": {
-				{ID: 0, Name: "jpg"},
-			},
-		}
-	}
+	formats := images.FileFormatsToConvert(detectedFileType)
 
 	err = tmpl.ExecuteTemplate(w, "format-elements", formats)
 	if err != nil {
