@@ -1,0 +1,7 @@
+.git
+LICENSE
+README.md
+tmp/
+.dockerignore
+.gitignore
+docker-compose.yml

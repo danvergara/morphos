@@ -206,7 +206,7 @@ func main() {
 	r.Post("/format", handleFileFormat)
 	r.Get("/modal", handleModal)
 
-	http.ListenAndServe("localhost:8080", r)
+	http.ListenAndServe(":8080", r)
 }
 
 func renderError(w http.ResponseWriter, message string, statusCode int) {

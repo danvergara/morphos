@@ -16,3 +16,19 @@ download-htmx:
 download-bootstrap:
 	curl -o static/bootstrap.min.css https://cdn.jsdelivr.net/npm/bootstrap@${BOOTSTRAP_VERSION}/dist/css/bootstrap.min.css
 	curl -o static/bootstrap.min.js https://cdn.jsdelivr.net/npm/bootstrap@${BOOTSTRAP_VERSION}/dist/js/bootstrap.bundle.min.js
+
+.PHONY: build
+## build: Builds the container image
+build:
+	docker build -t morphos .
+
+.PHONY: docker-run
+## docker-run: Runs the container
+docker-run:
+	docker run -d -p 8080:8080 morphos
+
+.PHONY: help
+## help: Prints this help message
+help:
+	@echo "Usage:"
+	@sed -n 's/^##//p' ${MAKEFILE_LIST} | column -t -s ':' |  sed -e 's/^/ /'
