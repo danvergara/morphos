@@ -8,6 +8,9 @@ import (
 	"image/jpeg"
 	"image/png"
 	"strings"
+
+	"github.com/chai2010/webp"
+	webpx "golang.org/x/image/webp"
 )
 
 const (
@@ -15,6 +18,7 @@ const (
 	JPEG = "jpeg"
 	JPG  = "jpg"
 	GIF  = "gif"
+	WEBP = "webp"
 
 	imageMimeType = "image/"
 )
@@ -56,6 +60,8 @@ func ConverImage(from, to string, imageBytes []byte) ([]byte, error) {
 		if err != nil {
 			return nil, err
 		}
+	case WEBP:
+		img, err = webpx.Decode(bytes.NewReader(imageBytes))
 	default:
 		return nil, fmt.Errorf("file format %s not supported", from)
 	}
@@ -73,6 +79,11 @@ func ConverImage(from, to string, imageBytes []byte) ([]byte, error) {
 		}
 	case GIF:
 		result, err = toGIF(img)
+		if err != nil {
+			return nil, err
+		}
+	case WEBP:
+		result, err = toWEBP(img)
 		if err != nil {
 			return nil, err
 		}
@@ -116,6 +127,17 @@ func toJPG(img image.Image) ([]byte, error) {
 	return buf.Bytes(), nil
 }
 
+func toWEBP(img image.Image) ([]byte, error) {
+	buf := new(bytes.Buffer)
+
+	// encode the image as a WEPB file.
+	if err := webp.Encode(buf, img, nil); err != nil {
+		return nil, err
+	}
+
+	return buf.Bytes(), nil
+}
+
 func FileFormatsToConvert(to string) map[string][]FileFormat {
 	formats := make(map[string][]FileFormat)
 
@@ -127,6 +149,7 @@ func FileFormatsToConvert(to string) map[string][]FileFormat {
 			"Formats": {
 				{Name: PNG},
 				{Name: GIF},
+				{Name: WEBP},
 			},
 		}
 	case PNG:
@@ -134,6 +157,7 @@ func FileFormatsToConvert(to string) map[string][]FileFormat {
 			"Formats": {
 				{Name: JPG},
 				{Name: GIF},
+				{Name: WEBP},
 			},
 		}
 	case GIF:
@@ -141,6 +165,15 @@ func FileFormatsToConvert(to string) map[string][]FileFormat {
 			"Formats": {
 				{Name: JPG},
 				{Name: PNG},
+				{Name: WEBP},
+			},
+		}
+	case WEBP:
+		formats = map[string][]FileFormat{
+			"Formats": {
+				{Name: JPG},
+				{Name: PNG},
+				{Name: GIF},
 			},
 		}
 	}
