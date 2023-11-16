@@ -45,6 +45,28 @@ func TestConvertImage(t *testing.T) {
 				mimetype: "image/png",
 			},
 		},
+		{
+			name: "webp to png",
+			input: input{
+				filename:     "testdata/gopher.webp",
+				mimetype:     "image/webp",
+				targetFormat: "png",
+			},
+			expected: expected{
+				mimetype: "image/png",
+			},
+		},
+		{
+			name: "png to webp",
+			input: input{
+				filename:     "testdata/gopher_pirate.png",
+				mimetype:     "image/png",
+				targetFormat: "webp",
+			},
+			expected: expected{
+				mimetype: "image/webp",
+			},
+		},
 	}
 	for _, tc := range tests {
 		tc := tc
@@ -62,7 +84,6 @@ func TestConvertImage(t *testing.T) {
 			require.Equal(t, tc.expected.mimetype, detectedFileType)
 		})
 	}
-
 }
 
 func TestFileFormatsToConvert(t *testing.T) {
@@ -87,6 +108,7 @@ func TestFileFormatsToConvert(t *testing.T) {
 				targetFormats: []images.FileFormat{
 					{Name: images.PNG},
 					{Name: images.GIF},
+					{Name: images.WEBP},
 				},
 			},
 		},
@@ -99,6 +121,7 @@ func TestFileFormatsToConvert(t *testing.T) {
 				targetFormats: []images.FileFormat{
 					{Name: images.JPG},
 					{Name: images.GIF},
+					{Name: images.WEBP},
 				},
 			},
 		},
@@ -111,6 +134,20 @@ func TestFileFormatsToConvert(t *testing.T) {
 				targetFormats: []images.FileFormat{
 					{Name: images.JPG},
 					{Name: images.PNG},
+					{Name: images.WEBP},
+				},
+			},
+		},
+		{
+			name: "WEBP",
+			input: input{
+				format: images.WEBP,
+			},
+			expected: expected{
+				targetFormats: []images.FileFormat{
+					{Name: images.JPG},
+					{Name: images.PNG},
+					{Name: images.GIF},
 				},
 			},
 		},
