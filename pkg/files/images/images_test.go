@@ -67,6 +67,18 @@ func TestConvertImage(t *testing.T) {
 				mimetype: "image/webp",
 			},
 		},
+		{
+			name: "webp to tiff",
+			input: input{
+				filename:     "testdata/gopher.webp",
+				mimetype:     "image/webp",
+				targetFormat: "tiff",
+			},
+			expected: expected{
+				// Seems http.DetectContentType can not detect image/tiff.
+				mimetype: "application/octet-stream",
+			},
+		},
 	}
 	for _, tc := range tests {
 		tc := tc
@@ -109,6 +121,7 @@ func TestFileFormatsToConvert(t *testing.T) {
 					{Name: images.PNG},
 					{Name: images.GIF},
 					{Name: images.WEBP},
+					{Name: images.TIFF},
 				},
 			},
 		},
@@ -122,6 +135,7 @@ func TestFileFormatsToConvert(t *testing.T) {
 					{Name: images.JPG},
 					{Name: images.GIF},
 					{Name: images.WEBP},
+					{Name: images.TIFF},
 				},
 			},
 		},
@@ -135,6 +149,7 @@ func TestFileFormatsToConvert(t *testing.T) {
 					{Name: images.JPG},
 					{Name: images.PNG},
 					{Name: images.WEBP},
+					{Name: images.TIFF},
 				},
 			},
 		},
@@ -148,6 +163,21 @@ func TestFileFormatsToConvert(t *testing.T) {
 					{Name: images.JPG},
 					{Name: images.PNG},
 					{Name: images.GIF},
+					{Name: images.TIFF},
+				},
+			},
+		},
+		{
+			name: "TIFF",
+			input: input{
+				format: images.TIFF,
+			},
+			expected: expected{
+				targetFormats: []images.FileFormat{
+					{Name: images.JPG},
+					{Name: images.PNG},
+					{Name: images.GIF},
+					{Name: images.WEBP},
 				},
 			},
 		},
