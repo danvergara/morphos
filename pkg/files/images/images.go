@@ -10,6 +10,7 @@ import (
 	"strings"
 
 	"github.com/chai2010/webp"
+	"golang.org/x/image/tiff"
 	webpx "golang.org/x/image/webp"
 )
 
@@ -19,6 +20,8 @@ const (
 	JPG  = "jpg"
 	GIF  = "gif"
 	WEBP = "webp"
+	TIFF = "tiff"
+	BMP  = "bmp"
 
 	imageMimeType = "image/"
 )
@@ -62,6 +65,8 @@ func ConverImage(from, to string, imageBytes []byte) ([]byte, error) {
 		}
 	case WEBP:
 		img, err = webpx.Decode(bytes.NewReader(imageBytes))
+	case TIFF:
+		img, err = tiff.Decode(bytes.NewReader(imageBytes))
 	default:
 		return nil, fmt.Errorf("file format %s not supported", from)
 	}
@@ -84,6 +89,11 @@ func ConverImage(from, to string, imageBytes []byte) ([]byte, error) {
 		}
 	case WEBP:
 		result, err = toWEBP(img)
+		if err != nil {
+			return nil, err
+		}
+	case TIFF:
+		result, err = toTIFF(img)
 		if err != nil {
 			return nil, err
 		}
@@ -138,6 +148,17 @@ func toWEBP(img image.Image) ([]byte, error) {
 	return buf.Bytes(), nil
 }
 
+func toTIFF(img image.Image) ([]byte, error) {
+	buf := new(bytes.Buffer)
+
+	// encode the image as a TIFF file.
+	if err := tiff.Encode(buf, img, nil); err != nil {
+		return nil, err
+	}
+
+	return buf.Bytes(), nil
+}
+
 func FileFormatsToConvert(to string) map[string][]FileFormat {
 	formats := make(map[string][]FileFormat)
 
@@ -150,6 +171,7 @@ func FileFormatsToConvert(to string) map[string][]FileFormat {
 				{Name: PNG},
 				{Name: GIF},
 				{Name: WEBP},
+				{Name: TIFF},
 			},
 		}
 	case PNG:
@@ -158,6 +180,7 @@ func FileFormatsToConvert(to string) map[string][]FileFormat {
 				{Name: JPG},
 				{Name: GIF},
 				{Name: WEBP},
+				{Name: TIFF},
 			},
 		}
 	case GIF:
@@ -166,6 +189,7 @@ func FileFormatsToConvert(to string) map[string][]FileFormat {
 				{Name: JPG},
 				{Name: PNG},
 				{Name: WEBP},
+				{Name: TIFF},
 			},
 		}
 	case WEBP:
@@ -174,6 +198,16 @@ func FileFormatsToConvert(to string) map[string][]FileFormat {
 				{Name: JPG},
 				{Name: PNG},
 				{Name: GIF},
+				{Name: TIFF},
+			},
+		}
+	case TIFF:
+		formats = map[string][]FileFormat{
+			"Formats": {
+				{Name: JPG},
+				{Name: PNG},
+				{Name: GIF},
+				{Name: WEBP},
 			},
 		}
 	}
