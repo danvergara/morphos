@@ -10,6 +10,8 @@ import (
 	"strings"
 
 	"github.com/chai2010/webp"
+	"golang.org/x/image/bmp"
+	"golang.org/x/image/tiff"
 	webpx "golang.org/x/image/webp"
 )
 
@@ -19,6 +21,8 @@ const (
 	JPG  = "jpg"
 	GIF  = "gif"
 	WEBP = "webp"
+	TIFF = "tiff"
+	BMP  = "bmp"
 
 	imageMimeType = "image/"
 )
@@ -62,6 +66,19 @@ func ConverImage(from, to string, imageBytes []byte) ([]byte, error) {
 		}
 	case WEBP:
 		img, err = webpx.Decode(bytes.NewReader(imageBytes))
+		if err != nil {
+			return nil, err
+		}
+	case TIFF:
+		img, err = tiff.Decode(bytes.NewReader(imageBytes))
+		if err != nil {
+			return nil, err
+		}
+	case BMP:
+		img, err = bmp.Decode(bytes.NewReader(imageBytes))
+		if err != nil {
+			return nil, err
+		}
 	default:
 		return nil, fmt.Errorf("file format %s not supported", from)
 	}
@@ -84,6 +101,16 @@ func ConverImage(from, to string, imageBytes []byte) ([]byte, error) {
 		}
 	case WEBP:
 		result, err = toWEBP(img)
+		if err != nil {
+			return nil, err
+		}
+	case TIFF:
+		result, err = toTIFF(img)
+		if err != nil {
+			return nil, err
+		}
+	case BMP:
+		result, err = toBMP(img)
 		if err != nil {
 			return nil, err
 		}
@@ -138,6 +165,27 @@ func toWEBP(img image.Image) ([]byte, error) {
 	return buf.Bytes(), nil
 }
 
+func toTIFF(img image.Image) ([]byte, error) {
+	buf := new(bytes.Buffer)
+
+	// encode the image as a TIFF file.
+	if err := tiff.Encode(buf, img, nil); err != nil {
+		return nil, err
+	}
+
+	return buf.Bytes(), nil
+}
+
+func toBMP(img image.Image) ([]byte, error) {
+	buf := new(bytes.Buffer)
+
+	if err := bmp.Encode(buf, img); err != nil {
+		return nil, err
+	}
+
+	return buf.Bytes(), nil
+}
+
 func FileFormatsToConvert(to string) map[string][]FileFormat {
 	formats := make(map[string][]FileFormat)
 
@@ -150,6 +198,8 @@ func FileFormatsToConvert(to string) map[string][]FileFormat {
 				{Name: PNG},
 				{Name: GIF},
 				{Name: WEBP},
+				{Name: TIFF},
+				{Name: BMP},
 			},
 		}
 	case PNG:
@@ -158,6 +208,8 @@ func FileFormatsToConvert(to string) map[string][]FileFormat {
 				{Name: JPG},
 				{Name: GIF},
 				{Name: WEBP},
+				{Name: TIFF},
+				{Name: BMP},
 			},
 		}
 	case GIF:
@@ -166,6 +218,8 @@ func FileFormatsToConvert(to string) map[string][]FileFormat {
 				{Name: JPG},
 				{Name: PNG},
 				{Name: WEBP},
+				{Name: TIFF},
+				{Name: BMP},
 			},
 		}
 	case WEBP:
@@ -174,10 +228,31 @@ func FileFormatsToConvert(to string) map[string][]FileFormat {
 				{Name: JPG},
 				{Name: PNG},
 				{Name: GIF},
+				{Name: TIFF},
+				{Name: BMP},
+			},
+		}
+	case TIFF:
+		formats = map[string][]FileFormat{
+			"Formats": {
+				{Name: JPG},
+				{Name: PNG},
+				{Name: GIF},
+				{Name: WEBP},
+				{Name: BMP},
+			},
+		}
+	case BMP:
+		formats = map[string][]FileFormat{
+			"Formats": {
+				{Name: JPG},
+				{Name: PNG},
+				{Name: GIF},
+				{Name: WEBP},
+				{Name: TIFF},
 			},
 		}
 	}
-
 	return formats
 }
 

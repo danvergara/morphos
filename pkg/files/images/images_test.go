@@ -1,11 +1,11 @@
 package images_test
 
 import (
-	"net/http"
 	"os"
 	"testing"
 
 	"github.com/danvergara/morphos/pkg/files/images"
+	"github.com/gabriel-vasile/mimetype"
 	"github.com/stretchr/testify/require"
 )
 
@@ -67,6 +67,39 @@ func TestConvertImage(t *testing.T) {
 				mimetype: "image/webp",
 			},
 		},
+		{
+			name: "webp to tiff",
+			input: input{
+				filename:     "testdata/gopher.webp",
+				mimetype:     "image/webp",
+				targetFormat: "tiff",
+			},
+			expected: expected{
+				mimetype: "image/tiff",
+			},
+		},
+		{
+			name: "bmp to png",
+			input: input{
+				filename:     "testdata/sunset.bmp",
+				mimetype:     "image/bmp",
+				targetFormat: "png",
+			},
+			expected: expected{
+				mimetype: "image/png",
+			},
+		},
+		{
+			name: "jpg to bmp",
+			input: input{
+				filename:     "testdata/Golang_Gopher.jpg",
+				mimetype:     "image/jpeg",
+				targetFormat: "bmp",
+			},
+			expected: expected{
+				mimetype: "image/bmp",
+			},
+		},
 	}
 	for _, tc := range tests {
 		tc := tc
@@ -74,14 +107,14 @@ func TestConvertImage(t *testing.T) {
 			inputImg, err := os.ReadFile(tc.input.filename)
 			require.NoError(t, err)
 
-			detectedFileType := http.DetectContentType(inputImg)
-			require.Equal(t, tc.input.mimetype, detectedFileType)
+			detectedFileType := mimetype.Detect(inputImg)
+			require.Equal(t, tc.input.mimetype, detectedFileType.String())
 
-			convertedImg, err := images.ConverImage(detectedFileType, tc.input.targetFormat, inputImg)
+			convertedImg, err := images.ConverImage(detectedFileType.String(), tc.input.targetFormat, inputImg)
 			require.NoError(t, err)
 
-			detectedFileType = http.DetectContentType(convertedImg)
-			require.Equal(t, tc.expected.mimetype, detectedFileType)
+			detectedFileType = mimetype.Detect(convertedImg)
+			require.Equal(t, tc.expected.mimetype, detectedFileType.String())
 		})
 	}
 }
@@ -109,6 +142,8 @@ func TestFileFormatsToConvert(t *testing.T) {
 					{Name: images.PNG},
 					{Name: images.GIF},
 					{Name: images.WEBP},
+					{Name: images.TIFF},
+					{Name: images.BMP},
 				},
 			},
 		},
@@ -122,6 +157,8 @@ func TestFileFormatsToConvert(t *testing.T) {
 					{Name: images.JPG},
 					{Name: images.GIF},
 					{Name: images.WEBP},
+					{Name: images.TIFF},
+					{Name: images.BMP},
 				},
 			},
 		},
@@ -135,6 +172,8 @@ func TestFileFormatsToConvert(t *testing.T) {
 					{Name: images.JPG},
 					{Name: images.PNG},
 					{Name: images.WEBP},
+					{Name: images.TIFF},
+					{Name: images.BMP},
 				},
 			},
 		},
@@ -148,6 +187,38 @@ func TestFileFormatsToConvert(t *testing.T) {
 					{Name: images.JPG},
 					{Name: images.PNG},
 					{Name: images.GIF},
+					{Name: images.TIFF},
+					{Name: images.BMP},
+				},
+			},
+		},
+		{
+			name: "TIFF",
+			input: input{
+				format: images.TIFF,
+			},
+			expected: expected{
+				targetFormats: []images.FileFormat{
+					{Name: images.JPG},
+					{Name: images.PNG},
+					{Name: images.GIF},
+					{Name: images.WEBP},
+					{Name: images.BMP},
+				},
+			},
+		},
+		{
+			name: "BMP",
+			input: input{
+				format: images.BMP,
+			},
+			expected: expected{
+				targetFormats: []images.FileFormat{
+					{Name: images.JPG},
+					{Name: images.PNG},
+					{Name: images.GIF},
+					{Name: images.WEBP},
+					{Name: images.TIFF},
 				},
 			},
 		},
