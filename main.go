@@ -19,7 +19,6 @@ import (
 )
 
 const (
-	uploadPath          = "/tmp"
 	uploadFileFormField = "uploadFile"
 )
 
@@ -29,7 +28,18 @@ var (
 
 	//go:embed all:static
 	staticFiles embed.FS
+	// Upload path.
+	// It is a variable now, which means that can be
+	// cofigurable through a environment variable.
+	uploadPath string
 )
+
+func init() {
+	uploadPath = os.Getenv("TMP_DIR")
+	if uploadPath == "" {
+		uploadPath = "/tmp"
+	}
+}
 
 type ConvertedFile struct {
 	Filename string
@@ -190,6 +200,12 @@ func handleModal(w http.ResponseWriter, r *http.Request) {
 }
 
 func main() {
+	port := os.Getenv("MORPHOS_PORT")
+	// default port.
+	if port == "" {
+		port = "8080"
+	}
+
 	r := chi.NewRouter()
 	r.Use(middleware.Logger)
 
@@ -205,7 +221,7 @@ func main() {
 	r.Post("/format", handleFileFormat)
 	r.Get("/modal", handleModal)
 
-	http.ListenAndServe(":8080", r)
+	http.ListenAndServe(fmt.Sprintf(":%s", port), r)
 }
 
 func renderError(w http.ResponseWriter, message string, statusCode int) {
