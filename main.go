@@ -15,6 +15,7 @@ import (
 	"github.com/go-chi/chi/v5/middleware"
 
 	"github.com/danvergara/morphos/pkg/files/images"
+	"github.com/gabriel-vasile/mimetype"
 )
 
 const (
@@ -91,8 +92,8 @@ func handleUploadFile(w http.ResponseWriter, r *http.Request) {
 
 	fileType := r.FormValue("input_format")
 
-	detectedFileType := http.DetectContentType(fileBytes)
-	convertedFile, err = images.ConverImage(detectedFileType, fileType, fileBytes)
+	detectedFileType := mimetype.Detect(fileBytes)
+	convertedFile, err = images.ConverImage(detectedFileType.String(), fileType, fileBytes)
 	if err != nil {
 		log.Printf("error ocurred while converting image %v", err)
 		renderError(w, "INVALID_FILE", http.StatusBadRequest)
@@ -151,17 +152,16 @@ func handleFileFormat(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	detectedFileType := http.DetectContentType(fileBytes)
+	detectedFileType := mimetype.Detect(fileBytes)
 
 	files := []string{
 		"templates/partials/form.tmpl",
 	}
 
 	tmpl, err := template.ParseFS(templatesHTML, files...)
-	formats := images.FileFormatsToConvert(detectedFileType)
+	formats := images.FileFormatsToConvert(detectedFileType.String())
 
-	err = tmpl.ExecuteTemplate(w, "format-elements", formats)
-	if err != nil {
+	if err = tmpl.ExecuteTemplate(w, "format-elements", formats); err != nil {
 		log.Printf("error occurred parsing template files: %v", err)
 		renderError(w, "FINTERNAL_ERROR", http.StatusInternalServerError)
 		return
@@ -182,8 +182,7 @@ func handleModal(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = tmpl.ExecuteTemplate(w, "content", ConvertedFile{Filename: filename})
-	if err != nil {
+	if err = tmpl.ExecuteTemplate(w, "content", ConvertedFile{Filename: filename}); err != nil {
 		log.Printf("error occurred executing template files: %v", err)
 		renderError(w, "INTERNAL_ERROR", http.StatusInternalServerError)
 		return
