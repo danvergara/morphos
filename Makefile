@@ -4,7 +4,7 @@ BOOTSTRAP_VERSION=5.3.2
 .PHONY: run
 ## run: Runs the air command.
 run:
-	air -c .air.toml
+	MORPHOS_PORT=3000 air -c .air.toml
 
 .PHONY: download-htmx
 ## download-htmx: Downloads HTMX minified js file
