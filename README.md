@@ -13,12 +13,12 @@ __Self-Hosted file converter server.__
 
 ## Overview
 
-Today we are forced to rely on third party services to convert files to other formats. This is a serious threat to your privacy, if you use such services to convert files with highly sensitive personal data. It can be used against you, sooner or later.
-Morphos server amis to solve the problem mentioned above, by providing a self-host server to convert files privately. It provides a nice UI, so easy to use.
+Today we are forced to rely on third party services to convert files to other formats. This is a serious threat to our privacy, if we use such services to convert files with highly sensitive personal data. It can be used against us, sooner or later.
+Morphos server aims to solve the problem mentioned above, by providing a self-hosted server to convert files privately. It provides a nice UI, so it's easy to use.
 
 ## Features
 
-- Serves a nice UI
+- Serves a nice web UI
 - Simple installation (distributed as a Docker image)
 
 ## License
