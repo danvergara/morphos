@@ -3,9 +3,10 @@ package files
 import (
 	"testing"
 
+	"github.com/stretchr/testify/require"
+
 	"github.com/danvergara/morphos/pkg/files/documents"
 	"github.com/danvergara/morphos/pkg/files/images"
-	"github.com/stretchr/testify/require"
 )
 
 func TestImageFactory(t *testing.T) {

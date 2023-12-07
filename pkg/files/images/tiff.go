@@ -3,27 +3,28 @@ package images
 import (
 	"bytes"
 	"fmt"
-	"image/png"
+
+	"golang.org/x/image/tiff"
 )
 
-type Png struct{}
+type Tiff struct{}
 
-func (p *Png) SupportedFormats() map[string][]string {
+func (t *Tiff) SupportedFormats() map[string][]string {
 	return map[string][]string{
 		"Image": {
 			JPG,
+			PNG,
 			GIF,
 			WEBP,
-			TIFF,
 			BMP,
 		},
 	}
 }
 
-func (p *Png) ConvertTo(format string, fileBytes []byte) ([]byte, error) {
+func (t *Tiff) ConvertTo(format string, fileBytes []byte) ([]byte, error) {
 	var result []byte
 
-	img, err := png.Decode(bytes.NewReader(fileBytes))
+	img, err := tiff.Decode(bytes.NewReader(fileBytes))
 	if err != nil {
 		return nil, err
 	}
@@ -34,8 +35,8 @@ func (p *Png) ConvertTo(format string, fileBytes []byte) ([]byte, error) {
 		if err != nil {
 			return nil, err
 		}
-	case GIF:
-		result, err = toGIF(img)
+	case PNG:
+		result, err = toPNG(img)
 		if err != nil {
 			return nil, err
 		}
@@ -44,8 +45,8 @@ func (p *Png) ConvertTo(format string, fileBytes []byte) ([]byte, error) {
 		if err != nil {
 			return nil, err
 		}
-	case TIFF:
-		result, err = toTIFF(img)
+	case GIF:
+		result, err = toGIF(img)
 		if err != nil {
 			return nil, err
 		}
@@ -61,6 +62,6 @@ func (p *Png) ConvertTo(format string, fileBytes []byte) ([]byte, error) {
 	return result, nil
 }
 
-func (p *Png) ImageType() string {
-	return PNG
+func (t *Tiff) ImageType() string {
+	return TIFF
 }
