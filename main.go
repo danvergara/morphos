@@ -11,11 +11,11 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/gabriel-vasile/mimetype"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 
-	"github.com/danvergara/morphos/pkg/files/images"
-	"github.com/gabriel-vasile/mimetype"
+	"github.com/danvergara/morphos/pkg/files"
 )
 
 const (
@@ -43,11 +43,6 @@ func init() {
 
 type ConvertedFile struct {
 	Filename string
-}
-
-type FileFormat struct {
-	Name string
-	ID   int
 }
 
 func index(w http.ResponseWriter, _ *http.Request) {
@@ -100,17 +95,39 @@ func handleUploadFile(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	fileType := r.FormValue("input_format")
+	targetFileType := r.FormValue("input_format")
 
 	detectedFileType := mimetype.Detect(fileBytes)
-	convertedFile, err = images.ConverImage(detectedFileType.String(), fileType, fileBytes)
+
+	fileType, subType, err := files.TypeAndSupType(detectedFileType.String())
 	if err != nil {
-		log.Printf("error ocurred while converting image %v", err)
+		log.Printf("error occurred getting type and subtype from mimetype: %v", err)
 		renderError(w, "INVALID_FILE", http.StatusBadRequest)
 		return
 	}
 
-	convertedFileName = filename(fileHeader.Filename, fileType)
+	fileFactory, err := files.BuildFactory(fileType)
+	if err != nil {
+		log.Printf("error occurred while getting a file factory: %v", err)
+		renderError(w, "INVALID_FILE", http.StatusBadRequest)
+		return
+	}
+
+	f, err := fileFactory.NewFile(subType)
+	if err != nil {
+		log.Printf("error occurred getting the file object: %v", err)
+		renderError(w, "INVALID_FILE", http.StatusBadRequest)
+		return
+	}
+
+	convertedFile, err = f.ConvertTo(targetFileType, fileBytes)
+	if err != nil {
+		log.Printf("error ocurred while converting image %v", err)
+		renderError(w, "INTERNAL_ERROR", http.StatusInternalServerError)
+		return
+	}
+
+	convertedFileName = filename(fileHeader.Filename, targetFileType)
 	convertedFilePath = filepath.Join(uploadPath, convertedFileName)
 
 	newFile, err := os.Create(convertedFilePath)
@@ -164,16 +181,35 @@ func handleFileFormat(w http.ResponseWriter, r *http.Request) {
 
 	detectedFileType := mimetype.Detect(fileBytes)
 
-	files := []string{
+	templates := []string{
 		"templates/partials/form.tmpl",
 	}
 
-	tmpl, err := template.ParseFS(templatesHTML, files...)
-	formats := images.FileFormatsToConvert(detectedFileType.String())
+	fileType, subType, err := files.TypeAndSupType(detectedFileType.String())
+	if err != nil {
+		log.Printf("error occurred getting type and subtype from mimetype: %v", err)
+		renderError(w, "INVALID_FILE", http.StatusBadRequest)
+		return
+	}
 
-	if err = tmpl.ExecuteTemplate(w, "format-elements", formats); err != nil {
+	fileFactory, err := files.BuildFactory(fileType)
+	if err != nil {
+		log.Printf("error occurred while getting a file factory: %v", err)
+		renderError(w, "INVALID_FILE", http.StatusBadRequest)
+		return
+	}
+
+	f, err := fileFactory.NewFile(subType)
+	if err != nil {
+		log.Printf("error occurred getting the file object: %v", err)
+		renderError(w, "INTERNAL_ERROR", http.StatusInternalServerError)
+		return
+	}
+
+	tmpl, err := template.ParseFS(templatesHTML, templates...)
+	if err = tmpl.ExecuteTemplate(w, "format-elements", f.SupportedFormats()); err != nil {
 		log.Printf("error occurred parsing template files: %v", err)
-		renderError(w, "FINTERNAL_ERROR", http.StatusInternalServerError)
+		renderError(w, "INTERNAL_ERROR", http.StatusInternalServerError)
 		return
 	}
 }

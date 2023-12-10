@@ -2,7 +2,6 @@ package images
 
 import (
 	"bytes"
-	"fmt"
 	"image"
 	"image/gif"
 	"image/jpeg"
@@ -12,7 +11,6 @@ import (
 	"github.com/chai2010/webp"
 	"golang.org/x/image/bmp"
 	"golang.org/x/image/tiff"
-	webpx "golang.org/x/image/webp"
 )
 
 const (
@@ -26,100 +24,6 @@ const (
 
 	imageMimeType = "image/"
 )
-
-// FileFormat is the file format representation meant to be shown in the
-// form template as an option.
-type FileFormat struct {
-	// Name of the file format to be shown in the option tag and as option value.
-	Name string
-}
-
-// ConverImage returns a image converted as an array of bytes,
-// if somethings wrong happens, the functions will error out.
-// The functions receives the format from to be converted,
-// the file format to be converted to and the image to be converted.
-func ConverImage(from, to string, imageBytes []byte) ([]byte, error) {
-	var (
-		img    image.Image
-		result []byte
-		err    error
-	)
-
-	to = ParseMimeType(to)
-	from = ParseMimeType(from)
-
-	switch from {
-	case PNG:
-		img, err = png.Decode(bytes.NewReader(imageBytes))
-		if err != nil {
-			return nil, err
-		}
-	case JPEG, JPG:
-		img, err = jpeg.Decode(bytes.NewReader(imageBytes))
-		if err != nil {
-			return nil, err
-		}
-	case GIF:
-		img, err = gif.Decode(bytes.NewReader(imageBytes))
-		if err != nil {
-			return nil, err
-		}
-	case WEBP:
-		img, err = webpx.Decode(bytes.NewReader(imageBytes))
-		if err != nil {
-			return nil, err
-		}
-	case TIFF:
-		img, err = tiff.Decode(bytes.NewReader(imageBytes))
-		if err != nil {
-			return nil, err
-		}
-	case BMP:
-		img, err = bmp.Decode(bytes.NewReader(imageBytes))
-		if err != nil {
-			return nil, err
-		}
-	default:
-		return nil, fmt.Errorf("file format %s not supported", from)
-	}
-
-	switch to {
-	case PNG:
-		result, err = toPNG(img)
-		if err != nil {
-			return nil, err
-		}
-	case JPEG, JPG:
-		result, err = toJPG(img)
-		if err != nil {
-			return nil, err
-		}
-	case GIF:
-		result, err = toGIF(img)
-		if err != nil {
-			return nil, err
-		}
-	case WEBP:
-		result, err = toWEBP(img)
-		if err != nil {
-			return nil, err
-		}
-	case TIFF:
-		result, err = toTIFF(img)
-		if err != nil {
-			return nil, err
-		}
-	case BMP:
-		result, err = toBMP(img)
-		if err != nil {
-			return nil, err
-		}
-	default:
-		return nil, fmt.Errorf("file format to conver to %s not supported", to)
-	}
-
-	return result, nil
-}
 
 func toPNG(img image.Image) ([]byte, error) {
 	buf := new(bytes.Buffer)
@@ -184,76 +88,6 @@ func toBMP(img image.Image) ([]byte, error) {
 	}
 
 	return buf.Bytes(), nil
-}
-
-func FileFormatsToConvert(to string) map[string][]FileFormat {
-	formats := make(map[string][]FileFormat)
-
-	to = ParseMimeType(to)
-
-	switch to {
-	case JPEG, JPG:
-		formats = map[string][]FileFormat{
-			"Formats": {
-				{Name: PNG},
-				{Name: GIF},
-				{Name: WEBP},
-				{Name: TIFF},
-				{Name: BMP},
-			},
-		}
-	case PNG:
-		formats = map[string][]FileFormat{
-			"Formats": {
-				{Name: JPG},
-				{Name: GIF},
-				{Name: WEBP},
-				{Name: TIFF},
-				{Name: BMP},
-			},
-		}
-	case GIF:
-		formats = map[string][]FileFormat{
-			"Formats": {
-				{Name: JPG},
-				{Name: PNG},
-				{Name: WEBP},
-				{Name: TIFF},
-				{Name: BMP},
-			},
-		}
-	case WEBP:
-		formats = map[string][]FileFormat{
-			"Formats": {
-				{Name: JPG},
-				{Name: PNG},
-				{Name: GIF},
-				{Name: TIFF},
-				{Name: BMP},
-			},
-		}
-	case TIFF:
-		formats = map[string][]FileFormat{
-			"Formats": {
-				{Name: JPG},
-				{Name: PNG},
-				{Name: GIF},
-				{Name: WEBP},
-				{Name: BMP},
-			},
-		}
-	case BMP:
-		formats = map[string][]FileFormat{
-			"Formats": {
-				{Name: JPG},
-				{Name: PNG},
-				{Name: GIF},
-				{Name: WEBP},
-				{Name: TIFF},
-			},
-		}
-	}
-	return formats
 }
 
 func ParseMimeType(mimetype string) string {
