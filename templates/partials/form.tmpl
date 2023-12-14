@@ -24,10 +24,13 @@
         <div class="col-sm">
           <label for="input-format" class="form-label">Formats to convert</label>
           <select id="input-format" class="form-select" name="input_format">
-            <option selected>...</option>
             {{ block "format-elements" . }}
-              {{ range $element := .Formats }}
-                <option value="{{ $element.Name }}">{{ $element.Name }}</option>
+              {{ range $family, $formats := . }}
+                <optgroup label="{{ $family }}">
+                {{ range $element := $formats }}
+                  <option value="{{ $element }}">{{ $element }}</option>
+                {{ end }}
+                </optgroup>
               {{ end }}
             {{ end}}
           </select>
