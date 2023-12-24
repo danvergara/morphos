@@ -8,3 +8,19 @@ type File interface {
 	SupportedFormats() map[string][]string
 	ConvertTo(string, string, []byte) ([]byte, error)
 }
+
+// SupportedFileTypes returns a map with the underlying file type,
+// given a sub-type.
+func SupportedFileTypes() map[string]string {
+	return map[string]string{
+		"png":  "image",
+		"jpg":  "image",
+		"jpeg": "image",
+		"gif":  "image",
+		"webp": "image",
+		"tiff": "image",
+		"bmp":  "image",
+		"docx": "document",
+		"pdf":  "document",
+	}
+}

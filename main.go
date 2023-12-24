@@ -14,6 +14,8 @@ import (
 	"github.com/gabriel-vasile/mimetype"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
+	"golang.org/x/text/cases"
+	"golang.org/x/text/language"
 
 	"github.com/danvergara/morphos/pkg/files"
 )
@@ -95,7 +97,8 @@ func handleUploadFile(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	targetFileType := r.FormValue("input_format")
+	targetFileSubType := r.FormValue("input_format")
+	log.Printf("form %v", r.Form)
 
 	detectedFileType := mimetype.Detect(fileBytes)
 
@@ -120,14 +123,19 @@ func handleUploadFile(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	convertedFile, err = f.ConvertTo(targetFileType, fileBytes)
+	targetFileType := files.SupportedFileTypes()[targetFileSubType]
+	convertedFile, err = f.ConvertTo(
+		cases.Title(language.English).String(targetFileType),
+		targetFileSubType,
+		fileBytes,
+	)
 	if err != nil {
 		log.Printf("error ocurred while converting image %v", err)
 		renderError(w, "INTERNAL_ERROR", http.StatusInternalServerError)
 		return
 	}
 
-	convertedFileName = filename(fileHeader.Filename, targetFileType)
+	convertedFileName = filename(fileHeader.Filename, targetFileSubType)
 	convertedFilePath = filepath.Join(uploadPath, convertedFileName)
 
 	newFile, err := os.Create(convertedFilePath)
