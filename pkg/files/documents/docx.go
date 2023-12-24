@@ -8,7 +8,7 @@ func (p *Docx) SupportedFormats() map[string][]string {
 	return make(map[string][]string)
 }
 
-func (p *Docx) ConvertTo(format string, fileBytes []byte) ([]byte, error) {
+func (p *Docx) ConvertTo(fileType, subType string, fileBytes []byte) ([]byte, error) {
 	return nil, errors.New("not implemented")
 }
 
