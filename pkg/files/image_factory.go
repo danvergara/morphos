@@ -15,18 +15,18 @@ type ImageFactory struct{}
 func (i *ImageFactory) NewFile(f string) (File, error) {
 	switch f {
 	case images.PNG:
-		return new(images.Png), nil
+		return images.NewPng(), nil
 	case images.JPEG:
-		return new(images.Jpeg), nil
+		return images.NewJpeg(), nil
 	case images.GIF:
-		return new(images.Gif), nil
+		return images.NewGif(), nil
 	case images.WEBP:
-		return new(images.Webp), nil
+		return images.NewWebp(), nil
 	case images.TIFF:
-		return new(images.Tiff), nil
+		return images.NewTiff(), nil
 	case images.BMP:
-		return new(images.Bmp), nil
+		return images.NewBmp(), nil
 	default:
-		return nil, fmt.Errorf("file of type %s not recognized\n", f)
+		return nil, fmt.Errorf("type file %s not recognized", f)
 	}
 }
