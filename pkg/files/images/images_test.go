@@ -12,7 +12,7 @@ import (
 
 type filer interface {
 	SupportedFormats() map[string][]string
-	ConvertTo(string, []byte) ([]byte, error)
+	ConvertTo(string, string, []byte) ([]byte, error)
 }
 
 type imager interface {
@@ -22,10 +22,11 @@ type imager interface {
 
 func TestConvertImage(t *testing.T) {
 	type input struct {
-		filename     string
-		mimetype     string
-		targetFormat string
-		imager       imager
+		filename       string
+		mimetype       string
+		targetFileType string
+		targetFormat   string
+		imager         imager
 	}
 	type expected struct {
 		mimetype         string
@@ -39,16 +40,18 @@ func TestConvertImage(t *testing.T) {
 		{
 			name: "png to jpeg",
 			input: input{
-				filename:     "testdata/gopher_pirate.png",
-				mimetype:     "image/png",
-				targetFormat: "jpeg",
-				imager:       new(images.Png),
+				filename:       "testdata/gopher_pirate.png",
+				mimetype:       "image/png",
+				targetFileType: "Image",
+				targetFormat:   "jpeg",
+				imager:         images.NewPng(),
 			},
 			expected: expected{
 				mimetype: "image/jpeg",
 				supportedFormats: map[string][]string{
 					"Image": {
 						images.JPG,
+						images.JPEG,
 						images.GIF,
 						images.WEBP,
 						images.TIFF,
@@ -60,10 +63,11 @@ func TestConvertImage(t *testing.T) {
 		{
 			name: "jpeg to png",
 			input: input{
-				filename:     "testdata/Golang_Gopher.jpg",
-				mimetype:     "image/jpeg",
-				targetFormat: "png",
-				imager:       new(images.Jpeg),
+				filename:       "testdata/Golang_Gopher.jpg",
+				mimetype:       "image/jpeg",
+				targetFileType: "Image",
+				targetFormat:   "png",
+				imager:         images.NewJpeg(),
 			},
 			expected: expected{
 				mimetype: "image/png",
@@ -81,16 +85,18 @@ func TestConvertImage(t *testing.T) {
 		{
 			name: "webp to png",
 			input: input{
-				filename:     "testdata/gopher.webp",
-				mimetype:     "image/webp",
-				targetFormat: "png",
-				imager:       new(images.Webp),
+				filename:       "testdata/gopher.webp",
+				mimetype:       "image/webp",
+				targetFileType: "Image",
+				targetFormat:   "png",
+				imager:         images.NewWebp(),
 			},
 			expected: expected{
 				mimetype: "image/png",
 				supportedFormats: map[string][]string{
 					"Image": {
 						images.JPG,
+						images.JPEG,
 						images.PNG,
 						images.GIF,
 						images.TIFF,
@@ -102,16 +108,18 @@ func TestConvertImage(t *testing.T) {
 		{
 			name: "png to webp",
 			input: input{
-				filename:     "testdata/gopher_pirate.png",
-				mimetype:     "image/png",
-				targetFormat: "webp",
-				imager:       new(images.Png),
+				filename:       "testdata/gopher_pirate.png",
+				mimetype:       "image/png",
+				targetFileType: "Image",
+				targetFormat:   "webp",
+				imager:         images.NewPng(),
 			},
 			expected: expected{
 				mimetype: "image/webp",
 				supportedFormats: map[string][]string{
 					"Image": {
 						images.JPG,
+						images.JPEG,
 						images.GIF,
 						images.WEBP,
 						images.TIFF,
@@ -123,16 +131,18 @@ func TestConvertImage(t *testing.T) {
 		{
 			name: "webp to tiff",
 			input: input{
-				filename:     "testdata/gopher.webp",
-				mimetype:     "image/webp",
-				targetFormat: "tiff",
-				imager:       new(images.Webp),
+				filename:       "testdata/gopher.webp",
+				mimetype:       "image/webp",
+				targetFileType: "Image",
+				targetFormat:   "tiff",
+				imager:         images.NewWebp(),
 			},
 			expected: expected{
 				mimetype: "image/tiff",
 				supportedFormats: map[string][]string{
 					"Image": {
 						images.JPG,
+						images.JPEG,
 						images.PNG,
 						images.GIF,
 						images.TIFF,
@@ -144,16 +154,18 @@ func TestConvertImage(t *testing.T) {
 		{
 			name: "bmp to png",
 			input: input{
-				filename:     "testdata/sunset.bmp",
-				mimetype:     "image/bmp",
-				targetFormat: "png",
-				imager:       new(images.Bmp),
+				filename:       "testdata/sunset.bmp",
+				mimetype:       "image/bmp",
+				targetFileType: "Image",
+				targetFormat:   "png",
+				imager:         images.NewBmp(),
 			},
 			expected: expected{
 				mimetype: "image/png",
 				supportedFormats: map[string][]string{
 					"Image": {
 						images.JPG,
+						images.JPEG,
 						images.PNG,
 						images.GIF,
 						images.TIFF,
@@ -165,10 +177,11 @@ func TestConvertImage(t *testing.T) {
 		{
 			name: "jpg to bmp",
 			input: input{
-				filename:     "testdata/Golang_Gopher.jpg",
-				mimetype:     "image/jpeg",
-				targetFormat: "bmp",
-				imager:       new(images.Jpeg),
+				filename:       "testdata/Golang_Gopher.jpg",
+				mimetype:       "image/jpeg",
+				targetFileType: "Image",
+				targetFormat:   "bmp",
+				imager:         images.NewJpeg(),
 			},
 			expected: expected{
 				mimetype: "image/bmp",
@@ -195,9 +208,11 @@ func TestConvertImage(t *testing.T) {
 			require.Equal(t, tc.input.mimetype, detectedFileType.String())
 
 			convertedImg, err := tc.input.imager.ConvertTo(
+				tc.input.targetFileType,
 				tc.input.targetFormat,
 				inputImg,
 			)
+
 			require.NoError(t, err)
 
 			detectedFileType = mimetype.Detect(convertedImg)
