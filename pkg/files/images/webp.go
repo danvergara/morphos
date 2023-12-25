@@ -20,6 +20,7 @@ func NewWebp() *Webp {
 	w := Webp{
 		compatibleFormats: map[string][]string{
 			"Image": {
+				AVIF,
 				JPG,
 				JPEG,
 				PNG,

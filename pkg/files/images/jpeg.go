@@ -19,6 +19,7 @@ func NewJpeg() *Jpeg {
 	j := Jpeg{
 		compatibleFormats: map[string][]string{
 			"Image": {
+				AVIF,
 				PNG,
 				GIF,
 				WEBP,

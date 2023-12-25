@@ -20,6 +20,7 @@ func NewBmp() *Bmp {
 	b := Bmp{
 		compatibleFormats: map[string][]string{
 			"Image": {
+				AVIF,
 				JPG,
 				JPEG,
 				PNG,
