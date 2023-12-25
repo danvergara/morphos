@@ -6,5 +6,21 @@ package files
 // and provides a method to convert the current file given a target format, if supported.
 type File interface {
 	SupportedFormats() map[string][]string
-	ConvertTo(string, []byte) ([]byte, error)
+	ConvertTo(string, string, []byte) ([]byte, error)
+}
+
+// SupportedFileTypes returns a map with the underlying file type,
+// given a sub-type.
+func SupportedFileTypes() map[string]string {
+	return map[string]string{
+		"png":  "image",
+		"jpg":  "image",
+		"jpeg": "image",
+		"gif":  "image",
+		"webp": "image",
+		"tiff": "image",
+		"bmp":  "image",
+		"docx": "document",
+		"pdf":  "document",
+	}
 }

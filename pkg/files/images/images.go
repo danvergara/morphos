@@ -2,6 +2,7 @@ package images
 
 import (
 	"bytes"
+	"fmt"
 	"image"
 	"image/gif"
 	"image/jpeg"
@@ -23,6 +24,7 @@ const (
 	BMP  = "bmp"
 
 	imageMimeType = "image/"
+	imageType     = "image"
 )
 
 func toPNG(img image.Image) ([]byte, error) {
@@ -96,4 +98,46 @@ func ParseMimeType(mimetype string) string {
 	}
 
 	return strings.TrimPrefix(mimetype, imageMimeType)
+}
+
+func convertToImage(target string, img image.Image) ([]byte, error) {
+	var err error
+	var result []byte
+
+	switch target {
+	case PNG:
+		result, err = toPNG(img)
+		if err != nil {
+			return nil, err
+		}
+	case JPEG, JPG:
+		result, err = toJPG(img)
+		if err != nil {
+			return nil, err
+		}
+	case GIF:
+		result, err = toGIF(img)
+		if err != nil {
+			return nil, err
+		}
+	case WEBP:
+		result, err = toWEBP(img)
+		if err != nil {
+			return nil, err
+		}
+	case TIFF:
+		result, err = toTIFF(img)
+		if err != nil {
+			return nil, err
+		}
+	case BMP:
+		result, err = toBMP(img)
+		if err != nil {
+			return nil, err
+		}
+	default:
+		return nil, fmt.Errorf("file format to conver to %s not supported", target)
+	}
+
+	return result, nil
 }

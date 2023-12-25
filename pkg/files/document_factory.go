@@ -19,6 +19,6 @@ func (d *DocumentFactory) NewFile(f string) (File, error) {
 	case documents.DOCX:
 		return new(documents.Docx), nil
 	default:
-		return nil, fmt.Errorf("file of type %s not recognized", f)
+		return nil, fmt.Errorf("type file file  %s not recognized", f)
 	}
 }
