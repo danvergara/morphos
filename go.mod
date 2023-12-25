@@ -8,7 +8,7 @@ require (
 	github.com/gabriel-vasile/mimetype v1.4.3
 	github.com/go-chi/chi/v5 v5.0.10
 	github.com/stretchr/testify v1.8.4
-	github.com/strukturag/libheif v1.16.2
+	github.com/strukturag/libheif v1.17.6
 	golang.org/x/image v0.14.0
 	golang.org/x/text v0.14.0
 )
