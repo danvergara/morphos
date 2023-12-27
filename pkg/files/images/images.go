@@ -153,7 +153,7 @@ func convertToImage(target string, img image.Image) ([]byte, error) {
 			return nil, err
 		}
 	default:
-		return nil, fmt.Errorf("file format to conver to %s not supported", target)
+		return nil, fmt.Errorf("file format to convert to not supported: %s", target)
 	}
 
 	return result, nil
