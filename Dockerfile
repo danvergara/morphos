@@ -1,7 +1,18 @@
-# syntax=docker/dockerfile:1
+FROM golang:1.21-alpine AS builder
 
-# Build the application from source
-FROM golang:1.21 AS builder
+RUN apk add --no-cache build-base \
+  pkgconf \
+  libgcc \
+  libstdc++ \
+  libwebp-dev \
+  libsharpyuv \
+  x265-libs \
+  libde265 \
+  libde265-dev \
+  musl \
+  aom-libs \
+  libheif \
+  libheif-dev
 
 WORKDIR /app
 
@@ -13,15 +24,7 @@ COPY . .
 ARG TARGETOS
 ARG TARGETARCH
 
-RUN GOOS=${TARGETOS} GOARCH=${TARGETARCH}  go build -o morphos .
-
-# Deploy the application binary into a lean image
-FROM debian:bookworm-slim AS release
-
-WORKDIR /
-
-COPY --from=builder /app/morphos /bin/morphos
+RUN GOOS=${TARGETOS} GOARCH=${TARGETARCH} go build -o morphos .
 
 EXPOSE 8080
-
-ENTRYPOINT ["/bin/morphos"]
+ENTRYPOINT ["/app/morphos"]
