@@ -13,6 +13,7 @@ type File interface {
 // given a sub-type.
 func SupportedFileTypes() map[string]string {
 	return map[string]string{
+		"avif": "image",
 		"png":  "image",
 		"jpg":  "image",
 		"jpeg": "image",
