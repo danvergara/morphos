@@ -14,6 +14,8 @@ jobs:
       - name: install libheif
         run: |
           sudo apt-get update
+          sudo add-apt-repository ppa:strukturag/libde265
+          sudo add-apt-repository ppa:strukturag/libheif
           sudo apt-get install -y cmake make pkg-config x265 libde265-dev libjpeg-dev libtool libheif-dev
       - name: pkg-config
         run: sudo pkg-config libheif --modversion
