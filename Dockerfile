@@ -14,7 +14,7 @@ RUN apk add --no-cache build-base \
   libheif \
   libheif-dev
 
-WORKDIR /app
+WORKDIR /build
 
 COPY go.* ./
 RUN go mod download
@@ -24,7 +24,12 @@ COPY . .
 ARG TARGETOS
 ARG TARGETARCH
 
-RUN GOOS=${TARGETOS} GOARCH=${TARGETARCH} go build -o morphos .
+RUN GOOS=${TARGETOS} GOARCH=${TARGETARCH} go build -ldflags='-s -w' -trimpath -o /dist/morphos .
+RUN ldd /dist/morphos | tr -s [:blank:] '\n' | grep ^/ | xargs -I % install -D % /dist/%
+
+FROM scratch
+COPY --from=builder /dist /
+USER 65534
 
 EXPOSE 8080
-ENTRYPOINT ["/app/morphos"]
+ENTRYPOINT ["/morphos"]
