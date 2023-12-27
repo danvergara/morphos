@@ -98,7 +98,6 @@ func handleUploadFile(w http.ResponseWriter, r *http.Request) {
 	}
 
 	targetFileSubType := r.FormValue("input_format")
-	log.Printf("form %v", r.Form)
 
 	detectedFileType := mimetype.Detect(fileBytes)
 
