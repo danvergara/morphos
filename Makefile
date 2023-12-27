@@ -25,7 +25,7 @@ build:
 .PHONY: docker-run
 ## docker-run: Runs the container
 docker-run:
-	docker run -d -p 8080:8080 morphos
+	docker run -d -p 8080:8080 -v /tmp:/tmp morphos
 
 .PHONY: help
 ## help: Prints this help message
