@@ -5,7 +5,7 @@ GO_VERSION=1.21.5
 .PHONY: run
 ## run: Runs the air command.
 run:
-	MORPHOS_PORT=3000 air -c .air.toml
+	MORPHOS_PORT=8080 air -c .air.toml
 
 .PHONY: download-htmx
 ## download-htmx: Downloads HTMX minified js file
