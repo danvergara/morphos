@@ -1,18 +1,45 @@
-FROM golang:1.21-alpine AS builder
+FROM ubuntu:22.04 AS base
 
-RUN apk add --no-cache build-base \
-  pkgconf \
-  libgcc \
-  libstdc++ \
-  libwebp-dev \
-  libsharpyuv \
-  x265-libs \
-  libde265 \
-  libde265-dev \
-  musl \
-  aom-libs \
-  libheif \
-  libheif-dev
+ARG GO_VERSION
+ENV GO_VERSION=${GO_VERSION}
+
+RUN apt-get update
+RUN apt-get install -y wget git gcc
+
+RUN wget -P /tmp "https://dl.google.com/go/go${GO_VERSION}.linux-amd64.tar.gz"
+
+RUN tar -C /usr/local -xzf "/tmp/go${GO_VERSION}.linux-amd64.tar.gz"
+RUN rm "/tmp/go${GO_VERSION}.linux-amd64.tar.gz"
+
+ENV GOPATH /go
+ENV PATH $GOPATH/bin:/usr/local/go/bin:$PATH
+RUN mkdir -p "$GOPATH/src" "$GOPATH/bin" && chmod -R 777 "$GOPATH"
+
+WORKDIR $GOPATH
+
+FROM base AS builder
+
+RUN apt-get update && \
+    apt-get install -y software-properties-common && \
+    add-apt-repository ppa:strukturag/libde265 && \
+    add-apt-repository ppa:strukturag/libheif && \
+    apt-get install -y --no-install-recommends cmake \
+      make \
+      pkg-config \
+      x265 \
+      libx265-dev \
+      libde265-dev \
+      libjpeg-dev \
+      libtool \
+      zlib1g-dev \
+      libaom-dev \
+      libheif1 \
+      libheif-dev && \
+      apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
+
+ARG TARGETOS
+ARG TARGETARCH
 
 WORKDIR /build
 
@@ -21,15 +48,6 @@ RUN go mod download
 
 COPY . .
 
-ARG TARGETOS
-ARG TARGETARCH
+RUN GOOS=${TARGETOS} GOARCH=${TARGETARCH} go build -ldflags='-s -w' -trimpath -o /app/morphos .
 
-RUN GOOS=${TARGETOS} GOARCH=${TARGETARCH} go build -ldflags='-s -w' -trimpath -o /dist/morphos .
-RUN ldd /dist/morphos | tr -s [:blank:] '\n' | grep ^/ | xargs -I % install -D % /dist/%
-
-FROM scratch
-COPY --from=builder /dist /
-USER 65534
-
-EXPOSE 8080
-ENTRYPOINT ["/morphos"]
+ENTRYPOINT ["/app/morphos"]
