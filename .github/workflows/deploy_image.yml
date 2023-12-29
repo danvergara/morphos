@@ -5,6 +5,9 @@ on:
     branches:
       - main
 
+env:
+  GO_VERSION: 1.21.5
+
 jobs:
   push_morphos_image:
     runs-on: ubuntu-latest
@@ -28,3 +31,4 @@ jobs:
           context: .
           push: true
           tags: ghcr.io/${{ github.actor }}/morphos-server:latest
+          build-args: GO_VERSION=${{ env.GO_VERSION }}
