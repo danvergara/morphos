@@ -1,5 +1,6 @@
 HTMX_VERSION=1.9.6
 BOOTSTRAP_VERSION=5.3.2
+GO_VERSION=1.21.5
 
 .PHONY: run
 ## run: Runs the air command.
@@ -17,15 +18,15 @@ download-bootstrap:
 	curl -o static/bootstrap.min.css https://cdn.jsdelivr.net/npm/bootstrap@${BOOTSTRAP_VERSION}/dist/css/bootstrap.min.css
 	curl -o static/bootstrap.min.js https://cdn.jsdelivr.net/npm/bootstrap@${BOOTSTRAP_VERSION}/dist/js/bootstrap.bundle.min.js
 
-.PHONY: build
-## build: Builds the container image
-build:
-	docker build -t morphos .
+.PHONY: docker-build
+## docker-build: Builds the container image
+docker-build:
+	docker build --build-arg="GO_VERSION=${GO_VERSION}" -t morphos .
 
 .PHONY: docker-run
 ## docker-run: Runs the container
 docker-run:
-	docker run -d -p 8080:8080 -v /tmp:/tmp morphos
+	docker run --rm -p 8080:8080 -v /tmp:/tmp morphos
 
 .PHONY: help
 ## help: Prints this help message
