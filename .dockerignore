@@ -5,3 +5,4 @@ tmp/
 .dockerignore
 .gitignore
 docker-compose.yml
+Dockerfile
