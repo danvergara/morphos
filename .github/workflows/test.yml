@@ -6,10 +6,20 @@ jobs:
   tests:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: Set up Go
         uses: actions/setup-go@v4
         with:
           go-version: '1.21'
+      - name: install libheif
+        run: |
+          sudo apt-get update
+          sudo add-apt-repository ppa:strukturag/libde265
+          sudo add-apt-repository ppa:strukturag/libheif
+          sudo apt-get install -y cmake make pkg-config x265 libde265-dev libjpeg-dev libtool libheif-dev
+      - name: pkg-config
+        run: sudo pkg-config libheif --modversion
+      - name: Install dependencies
+        run: go get .
       - name: Test
         run: go test -v ./...

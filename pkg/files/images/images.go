@@ -9,6 +9,7 @@ import (
 	"image/png"
 	"strings"
 
+	"github.com/Kagami/go-avif"
 	"github.com/chai2010/webp"
 	"golang.org/x/image/bmp"
 	"golang.org/x/image/tiff"
@@ -22,6 +23,7 @@ const (
 	WEBP = "webp"
 	TIFF = "tiff"
 	BMP  = "bmp"
+	AVIF = "avif"
 
 	imageMimeType = "image/"
 	imageType     = "image"
@@ -92,6 +94,16 @@ func toBMP(img image.Image) ([]byte, error) {
 	return buf.Bytes(), nil
 }
 
+func toAvif(img image.Image) ([]byte, error) {
+	buf := new(bytes.Buffer)
+
+	if err := avif.Encode(buf, img, nil); err != nil {
+		return nil, err
+	}
+
+	return buf.Bytes(), nil
+}
+
 func ParseMimeType(mimetype string) string {
 	if !strings.Contains(mimetype, imageMimeType) {
 		return mimetype
@@ -135,8 +147,13 @@ func convertToImage(target string, img image.Image) ([]byte, error) {
 		if err != nil {
 			return nil, err
 		}
+	case AVIF:
+		result, err = toAvif(img)
+		if err != nil {
+			return nil, err
+		}
 	default:
-		return nil, fmt.Errorf("file format to conver to %s not supported", target)
+		return nil, fmt.Errorf("file format to convert to not supported: %s", target)
 	}
 
 	return result, nil

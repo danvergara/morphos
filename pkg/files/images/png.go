@@ -19,6 +19,7 @@ func NewPng() *Png {
 	p := Png{
 		compatibleFormats: map[string][]string{
 			"Image": {
+				AVIF,
 				JPG,
 				JPEG,
 				GIF,

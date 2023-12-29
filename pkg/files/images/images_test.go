@@ -50,6 +50,7 @@ func TestConvertImage(t *testing.T) {
 				mimetype: "image/jpeg",
 				supportedFormats: map[string][]string{
 					"Image": {
+						images.AVIF,
 						images.JPG,
 						images.JPEG,
 						images.GIF,
@@ -73,6 +74,7 @@ func TestConvertImage(t *testing.T) {
 				mimetype: "image/png",
 				supportedFormats: map[string][]string{
 					"Image": {
+						images.AVIF,
 						images.PNG,
 						images.GIF,
 						images.WEBP,
@@ -95,6 +97,7 @@ func TestConvertImage(t *testing.T) {
 				mimetype: "image/png",
 				supportedFormats: map[string][]string{
 					"Image": {
+						images.AVIF,
 						images.JPG,
 						images.JPEG,
 						images.PNG,
@@ -118,6 +121,7 @@ func TestConvertImage(t *testing.T) {
 				mimetype: "image/webp",
 				supportedFormats: map[string][]string{
 					"Image": {
+						images.AVIF,
 						images.JPG,
 						images.JPEG,
 						images.GIF,
@@ -141,6 +145,7 @@ func TestConvertImage(t *testing.T) {
 				mimetype: "image/tiff",
 				supportedFormats: map[string][]string{
 					"Image": {
+						images.AVIF,
 						images.JPG,
 						images.JPEG,
 						images.PNG,
@@ -164,6 +169,7 @@ func TestConvertImage(t *testing.T) {
 				mimetype: "image/png",
 				supportedFormats: map[string][]string{
 					"Image": {
+						images.AVIF,
 						images.JPG,
 						images.JPEG,
 						images.PNG,
@@ -187,6 +193,31 @@ func TestConvertImage(t *testing.T) {
 				mimetype: "image/bmp",
 				supportedFormats: map[string][]string{
 					"Image": {
+						images.AVIF,
+						images.PNG,
+						images.GIF,
+						images.WEBP,
+						images.TIFF,
+						images.BMP,
+					},
+				},
+			},
+		},
+		{
+			name: "avif to png",
+			input: input{
+				filename:       "testdata/mr_robot.avif",
+				mimetype:       "image/avif",
+				targetFileType: "Image",
+				targetFormat:   "png",
+				imager:         images.NewAvif(),
+			},
+			expected: expected{
+				mimetype: "image/png",
+				supportedFormats: map[string][]string{
+					"Image": {
+						images.JPG,
+						images.JPEG,
 						images.PNG,
 						images.GIF,
 						images.WEBP,
