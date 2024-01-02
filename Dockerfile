@@ -1,6 +1,6 @@
 FROM ubuntu:22.04 AS build
 
-ARG GO_VERSION
+ARG GO_VERSION TARGETOS TARGETARCH
 
 ENV GO_VERSION=${GO_VERSION}
 ENV GOPATH /go
@@ -11,6 +11,7 @@ RUN apt-get update && \
     add-apt-repository ppa:strukturag/libde265 && \
     add-apt-repository ppa:strukturag/libheif && \
     apt-get install -y --no-install-recommends cmake \
+      gcc-x86-64-linux-gnu libc6-dev-amd64-cross \
       wget \
       git \
       gcc \
@@ -42,7 +43,7 @@ RUN go mod download
 
 COPY . .
 
-RUN CGO_ENABLED=1 GOOS=linux GOARCH=amd64 go build -o /app/morphos .
+RUN CGO_ENABLED=1 GOOS=${TARGETOS} GOARCH=${TARGETARCH} CC=x86_64-linux-gnu-gcc go build -o /app/morphos .
 
 FROM ubuntu:22.04
 
