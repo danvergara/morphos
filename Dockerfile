@@ -1,6 +1,6 @@
 FROM ubuntu:22.04 AS build
 
-ARG GO_VERSION TARGETOS TARGETARCH
+ARG GO_VERSION
 
 ENV GO_VERSION=${GO_VERSION}
 ENV GOPATH /go
@@ -42,7 +42,7 @@ RUN go mod download
 
 COPY . .
 
-RUN GOOS=${TARGETOS} GOARCH=${TARGETARCH} go build -ldflags='-s -w' -trimpath -o /app/morphos .
+RUN CGO_ENABLED=1 GOOS=linux GOARCH=amd64 go build -o /app/morphos .
 
 FROM ubuntu:22.04
 
