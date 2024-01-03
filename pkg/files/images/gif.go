@@ -19,7 +19,6 @@ func NewGif() *Gif {
 	g := Gif{
 		compatibleFormats: map[string][]string{
 			"Image": {
-				AVIF,
 				JPG,
 				JPEG,
 				PNG,

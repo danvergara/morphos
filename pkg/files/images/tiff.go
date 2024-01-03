@@ -20,7 +20,6 @@ func NewTiff() *Tiff {
 	t := Tiff{
 		compatibleFormats: map[string][]string{
 			"Image": {
-				AVIF,
 				JPG,
 				JPEG,
 				PNG,
