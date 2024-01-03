@@ -26,8 +26,6 @@ func (i *ImageFactory) NewFile(f string) (File, error) {
 		return images.NewTiff(), nil
 	case images.BMP:
 		return images.NewBmp(), nil
-	case images.AVIF:
-		return images.NewAvif(), nil
 	default:
 		return nil, fmt.Errorf("type file %s not recognized", f)
 	}

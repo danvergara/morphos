@@ -33,8 +33,6 @@ The project is written in Go 1.21.
 1. You can run the project on bare metal (this uses air for live-reloading):
 
 ```
-$ brew install cmake make pkg-config x265 libde265 libjpeg libtool aom
-$ brew install libheif
 $ make run
 ```
 
