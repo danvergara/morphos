@@ -45,10 +45,11 @@ func init() {
 
 type ConvertedFile struct {
 	Filename string
+	FileType string
 }
 
 func index(w http.ResponseWriter, _ *http.Request) {
-	files := []string{
+	tmpls := []string{
 		"templates/base.tmpl",
 		"templates/partials/htmx.tmpl",
 		"templates/partials/style.tmpl",
@@ -58,7 +59,7 @@ func index(w http.ResponseWriter, _ *http.Request) {
 		"templates/partials/js.tmpl",
 	}
 
-	tmpl, err := template.ParseFS(templatesHTML, files...)
+	tmpl, err := template.ParseFS(templatesHTML, tmpls...)
 	if err != nil {
 		log.Printf("error ocurred parsing templates: %v", err)
 		renderError(w, "INTERNAL_ERROR", http.StatusInternalServerError)
@@ -150,19 +151,32 @@ func handleUploadFile(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	files := []string{
+	tmpls := []string{
 		"templates/partials/card_file.tmpl",
 		"templates/partials/modal.tmpl",
 	}
 
-	tmpl, err := template.ParseFS(templatesHTML, files...)
+	tmpl, err := template.ParseFS(templatesHTML, tmpls...)
 	if err != nil {
 		log.Printf("error occurred parsing template files: %v", err)
 		renderError(w, "INTERNAL_ERROR", http.StatusInternalServerError)
 		return
 	}
 
-	err = tmpl.ExecuteTemplate(w, "content", ConvertedFile{Filename: convertedFileName})
+	convertedFileMimeType := mimetype.Detect(convertedFile)
+
+	convertedFileType, _, err := files.TypeAndSupType(convertedFileMimeType.String())
+	if err != nil {
+		log.Printf("error occurred getting the file type of the result file: %v", err)
+		renderError(w, "INTERNAL_ERROR", http.StatusInternalServerError)
+		return
+	}
+
+	err = tmpl.ExecuteTemplate(
+		w,
+		"content",
+		ConvertedFile{Filename: convertedFileName, FileType: convertedFileType},
+	)
 	if err != nil {
 		log.Printf("error occurred executing template files: %v", err)
 		renderError(w, "INTERNAL_ERROR", http.StatusInternalServerError)
@@ -223,19 +237,20 @@ func handleFileFormat(w http.ResponseWriter, r *http.Request) {
 
 func handleModal(w http.ResponseWriter, r *http.Request) {
 	filename := r.URL.Query().Get("filename")
+	filetype := r.URL.Query().Get("filetype")
 
-	files := []string{
+	tmpls := []string{
 		"templates/partials/active_modal.tmpl",
 	}
 
-	tmpl, err := template.ParseFS(templatesHTML, files...)
+	tmpl, err := template.ParseFS(templatesHTML, tmpls...)
 	if err != nil {
 		log.Printf("error occurred parsing template files: %v", err)
 		renderError(w, "INTERNAL_ERROR", http.StatusInternalServerError)
 		return
 	}
 
-	if err = tmpl.ExecuteTemplate(w, "content", ConvertedFile{Filename: filename}); err != nil {
+	if err = tmpl.ExecuteTemplate(w, "content", ConvertedFile{Filename: filename, FileType: filetype}); err != nil {
 		log.Printf("error occurred executing template files: %v", err)
 		renderError(w, "INTERNAL_ERROR", http.StatusInternalServerError)
 		return

@@ -27,6 +27,9 @@ func NewBmp() *Bmp {
 				TIFF,
 				WEBP,
 			},
+			"Document": {
+				PDF,
+			},
 		},
 	}
 
@@ -62,6 +65,19 @@ func (b *Bmp) ConvertTo(fileType, subType string, fileBytes []byte) ([]byte, err
 		}
 
 		result, err = convertToImage(subType, img)
+		if err != nil {
+			return nil, fmt.Errorf(
+				"ConvertTo: error at converting image to another format: %w",
+				err,
+			)
+		}
+	case documentType:
+		img, err := bmp.Decode(bytes.NewReader(fileBytes))
+		if err != nil {
+			return nil, err
+		}
+
+		result, err = convertToDocument(subType, img)
 		if err != nil {
 			return nil, fmt.Errorf(
 				"ConvertTo: error at converting image to another format: %w",
