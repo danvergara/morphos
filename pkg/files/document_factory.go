@@ -7,7 +7,13 @@ import (
 )
 
 // DocumentFactory implements the FileFactory interface.
-type DocumentFactory struct{}
+type DocumentFactory struct {
+	filename string
+}
+
+func NewDocumentFactory(filename string) *DocumentFactory {
+	return &DocumentFactory{filename: filename}
+}
 
 // NewFile method returns an object that implements the File interface,
 // given a document format as input.
@@ -15,7 +21,7 @@ type DocumentFactory struct{}
 func (d *DocumentFactory) NewFile(f string) (File, error) {
 	switch f {
 	case documents.PDF:
-		return new(documents.Pdf), nil
+		return documents.NewPdf(d.filename), nil
 	case documents.DOCX:
 		return new(documents.Docx), nil
 	default:

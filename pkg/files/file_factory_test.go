@@ -10,7 +10,7 @@ import (
 )
 
 func TestImageFactory(t *testing.T) {
-	imgF, err := BuildFactory(Img)
+	imgF, err := BuildFactory(Img, "foo.png")
 	require.NoError(t, err)
 
 	imageFile, err := imgF.NewFile(images.PNG)
@@ -25,7 +25,7 @@ func TestImageFactory(t *testing.T) {
 }
 
 func TestDocumentFactory(t *testing.T) {
-	docF, err := BuildFactory(Doc)
+	docF, err := BuildFactory(Doc, "foo.pdf")
 	require.NoError(t, err)
 
 	docFile, err := docF.NewFile(documents.PDF)
