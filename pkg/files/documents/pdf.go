@@ -11,6 +11,7 @@ import (
 	"image/png"
 	"io"
 	"os"
+	"path/filepath"
 	"slices"
 	"strings"
 
@@ -88,7 +89,10 @@ func (p *Pdf) ConvertTo(fileType, subType string, fileBytes []byte) ([]byte, err
 		}
 
 		// Parses the file name of the Zip file.
-		zipFileName := fmt.Sprintf("/tmp/%s.zip", filenameWithoutExtension(p.filename))
+		zipFileName := filepath.Join("/tmp", fmt.Sprintf(
+			"%s.zip",
+			strings.TrimSuffix(p.filename, filepath.Ext(p.filename)),
+		))
 
 		// Creates the zip file that will be returned.
 		archive, err := os.Create(zipFileName)
@@ -110,11 +114,12 @@ func (p *Pdf) ConvertTo(fileType, subType string, fileBytes []byte) ([]byte, err
 			// Parses the file name image.
 			imgFileName := fmt.Sprintf(
 				"%s_%d.%s",
-				filenameWithoutExtension(p.filename),
+				strings.TrimSuffix(p.filename, filepath.Ext(p.filename)),
 				pageNum,
 				subType,
 			)
-			tmpImgFileMame := fmt.Sprintf("/tmp/%s", imgFileName)
+
+			tmpImgFileMame := filepath.Join("/tmp", imgFileName)
 
 			// Converts the current pdf page to an image.Image.
 			img, err := convertPDFPageToImage(pdfReader, device, pageNum)
