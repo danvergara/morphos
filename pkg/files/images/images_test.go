@@ -222,6 +222,8 @@ func TestConvertImage(t *testing.T) {
 	for _, tc := range tests {
 		tc := tc
 		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+
 			inputImg, err := os.ReadFile(tc.input.filename)
 			require.NoError(t, err)
 
@@ -396,6 +398,8 @@ func TestConvertImageToDocument(t *testing.T) {
 	for _, tc := range tests {
 		tc := tc
 		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+
 			inputImg, err := os.ReadFile(tc.input.filename)
 			require.NoError(t, err)
 

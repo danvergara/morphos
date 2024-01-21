@@ -100,26 +100,41 @@ func toBMP(img image.Image) ([]byte, error) {
 	return buf.Bytes(), nil
 }
 
+// toPDF returns pdf file as an slice of bytes.
+// Receives an image.Image as a parameter.
 func toPDF(img image.Image) ([]byte, error) {
+	// Sets a Rectangle based on the size of the image.
+	imgRect := gopdf.Rect{
+		W: float64(img.Bounds().Dx()),
+		H: float64(img.Bounds().Dy()),
+	}
+
+	// Init the pdf obkect.
 	pdf := gopdf.GoPdf{}
+
+	// Sets the size of the every pdf page,
+	// based on the dimensions of the image.
 	pdf.Start(
 		gopdf.Config{
-			PageSize: gopdf.Rect{W: float64(img.Bounds().Dx()), H: float64(img.Bounds().Dy())},
+			PageSize: imgRect,
 		},
 	)
 
-	// Add a page to the PDF
+	// Add a page to the PDF.
 	pdf.AddPage()
 
-	if err := pdf.ImageFrom(img, 0, 0, &gopdf.Rect{W: float64(img.Bounds().Dx()), H: float64(img.Bounds().Dy())}); err != nil {
+	// Draws the image on the rectangle on the page above created.
+	if err := pdf.ImageFrom(img, 0, 0, &imgRect); err != nil {
 		return nil, err
 	}
 
+	// Creates a bytes.Buffer and writes the pdf data to it.
 	buf := new(bytes.Buffer)
 	if _, err := pdf.WriteTo(buf); err != nil {
 		return nil, err
 	}
 
+	// Returns the pdf data as slice of bytes.
 	return buf.Bytes(), nil
 }
 

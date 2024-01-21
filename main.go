@@ -109,7 +109,7 @@ func handleUploadFile(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	fileFactory, err := files.BuildFactory(fileType)
+	fileFactory, err := files.BuildFactory(fileType, fileHeader.Filename)
 	if err != nil {
 		log.Printf("error occurred while getting a file factory: %v", err)
 		renderError(w, "INVALID_FILE", http.StatusBadRequest)
@@ -133,6 +133,10 @@ func handleUploadFile(w http.ResponseWriter, r *http.Request) {
 		log.Printf("error ocurred while converting image %v", err)
 		renderError(w, "INTERNAL_ERROR", http.StatusInternalServerError)
 		return
+	}
+
+	if fileType == "application" {
+		targetFileSubType = "zip"
 	}
 
 	convertedFileName = filename(fileHeader.Filename, targetFileSubType)
@@ -213,7 +217,7 @@ func handleFileFormat(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	fileFactory, err := files.BuildFactory(fileType)
+	fileFactory, err := files.BuildFactory(fileType, "")
 	if err != nil {
 		log.Printf("error occurred while getting a file factory: %v", err)
 		renderError(w, "INVALID_FILE", http.StatusBadRequest)
