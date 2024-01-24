@@ -6,6 +6,12 @@ ARG TARGETARCH
 
 WORKDIR /app
 
+RUN apt-get update \
+   && apt-get install -y --no-install-recommends fonts-recommended \
+   && apt-get autoremove -y \
+   && apt-get purge -y --auto-remove \
+   && rm -rf /var/lib/apt/lists/*
+
 COPY go.* ./
 RUN go mod download
 
@@ -19,6 +25,9 @@ FROM debian:bookworm-slim AS release
 WORKDIR /
 
 COPY --from=builder /app/morphos /bin/morphos
+COPY --from=builder /usr/share/fonts /usr/share/fonts
+
+ENV FONTCONFIG_PATH /usr/share/fonts
 
 EXPOSE 8080
 
