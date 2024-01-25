@@ -3,6 +3,8 @@ package images
 import (
 	"bytes"
 	"fmt"
+	"image"
+	"image/draw"
 	"image/png"
 	"slices"
 	"strings"
@@ -25,6 +27,9 @@ func NewPng() *Png {
 				WEBP,
 				TIFF,
 				BMP,
+			},
+			"Document": {
+				PDF,
 			},
 		},
 	}
@@ -60,6 +65,22 @@ func (p *Png) ConvertTo(fileType, subType string, fileBytes []byte) ([]byte, err
 		}
 
 		result, err = convertToImage(subType, img)
+		if err != nil {
+			return nil, fmt.Errorf(
+				"ConvertTo: error at converting image to another format: %w",
+				err,
+			)
+		}
+	case documentType:
+		img, err := png.Decode(bytes.NewReader(fileBytes))
+		if err != nil {
+			return nil, err
+		}
+
+		rgba := image.NewRGBA(img.Bounds())
+		draw.Draw(rgba, img.Bounds(), img, image.Point{}, draw.Src)
+
+		result, err = convertToDocument(subType, rgba)
 		if err != nil {
 			return nil, fmt.Errorf(
 				"ConvertTo: error at converting image to another format: %w",

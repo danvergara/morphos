@@ -20,10 +20,11 @@
         <div class="card text-center">
           <div class="card-body">
             <input type="hidden" name="filename" value="{{ .Filename }}" id="filename"></input>
+            <input type="hidden" name="filetype" value="{{ .FileType }}" id="filetype"></input>
             <button hx-get="/modal"
                     hx-target="#modals-here"
                     hx-trigger="click"
-                    hx-include="[name='filename']"
+                    hx-include="[name='filename'],[name='filetype']"
                     hx-params="*"
                     data-bs-toggle="modal"
                     data-bs-target="#modals-here"

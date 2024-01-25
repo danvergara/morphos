@@ -19,12 +19,12 @@ const (
 
 // BuildFactory is a function responsible to return a FileFactory,
 // given a supported and valid file type, otherwise, it will error out.
-func BuildFactory(f string) (FileFactory, error) {
+func BuildFactory(f string, filename string) (FileFactory, error) {
 	switch f {
 	case Img:
 		return new(ImageFactory), nil
 	case Doc, Application:
-		return new(DocumentFactory), nil
+		return NewDocumentFactory(filename), nil
 	default:
 		return nil, fmt.Errorf("factory with id %s not recognized", f)
 	}

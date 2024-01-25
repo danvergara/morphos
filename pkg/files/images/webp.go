@@ -3,6 +3,8 @@ package images
 import (
 	"bytes"
 	"fmt"
+	"image"
+	"image/draw"
 	"slices"
 	"strings"
 
@@ -26,6 +28,9 @@ func NewWebp() *Webp {
 				GIF,
 				TIFF,
 				BMP,
+			},
+			"Document": {
+				PDF,
 			},
 		},
 	}
@@ -62,6 +67,22 @@ func (w *Webp) ConvertTo(fileType, subType string, fileBytes []byte) ([]byte, er
 		}
 
 		result, err = convertToImage(subType, img)
+		if err != nil {
+			return nil, fmt.Errorf(
+				"ConvertTo: error at converting image to another format: %w",
+				err,
+			)
+		}
+	case documentType:
+		img, err := webp.Decode(bytes.NewReader(fileBytes))
+		if err != nil {
+			return nil, err
+		}
+
+		rgba := image.NewRGBA(img.Bounds())
+		draw.Draw(rgba, img.Bounds(), img, image.Point{}, draw.Src)
+
+		result, err = convertToDocument(subType, rgba)
 		if err != nil {
 			return nil, fmt.Errorf(
 				"ConvertTo: error at converting image to another format: %w",

@@ -6,7 +6,11 @@
         <h5 class="modal-title">{{ .Filename }}</h5>
       </div>
       <div class="modal-body">
+      {{if eq .FileType "image"}}
         <img src="/files/{{ .Filename }}" class="img-fluid" alt="Responsive image">
+      {{else if eq .FileType "application"}}
+        <embed src="/files/{{ .Filename }}" width="500" height="375">
+      {{end}}
       </div>
       <div class="modal-footer">
         <a href="/files/{{ .Filename }}" download>
