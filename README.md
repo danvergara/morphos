@@ -8,9 +8,12 @@ __Self-Hosted file converter server.__
 ## Table of contents
 
 - [Overview](#overview)
-- [Installation](#Installation)
-    - [Docker](#Docker)
+- [Installation](#installation)
+    - [Docker](#docker)
 - [Features](#features)
+- [Usage](#usage)
+- [Supported Files](#supported-files-and-convert-matrix)
+    - [Images](#images-x-images)
 - [License](#license)
 
 ## Overview
@@ -57,6 +60,19 @@ After hitting `Upload` button you will see a view like the one below, asking you
 A modal will pop up with a preview of the converted image.
 
 <img src="screenshots/modal_morphos.png"/>
+
+## Supported Files And Convert Matrix
+
+### Images x Images
+
+|       |  PNG  |  JPEG  |  GIF  |  WEBP  |  TIFF  |  BMP  |
+|-------|-------|--------|-------|--------|--------|-------|
+|  PNG  |       |   ✅   |  ✅   |   ✅   |   ✅   |  ✅   |
+|  JPEG |  ✅   |        |  ✅   |   ✅   |   ✅   |  ✅   |
+|  GIF  |  ✅   |   ✅   |       |   ✅   |   ✅   |  ✅   |
+|  WEBP |  ✅   |   ✅   |  ✅   |        |   ✅   |  ✅   |
+|  TIFF |  ✅   |   ✅   |  ✅   |   ✅   |        |  ✅   |
+|  BMP  |  ✅   |   ✅   |  ✅   |   ✅   |   ✅   |       |
 
 ## License
 The MIT License (MIT). See [LICENSE](LICENSE) file for more details.
