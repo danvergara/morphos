@@ -61,5 +61,18 @@ A modal will pop up with a preview of the converted image.
 
 <img src="screenshots/modal_morphos.png"/>
 
+## Supported Files And Convert Matrix
+
+### Images x Images
+
+|       |  PNG  |  JPEG  |  GIF  |  WEBP  |  TIFF  |  BMP  |
+|-------|-------|--------|-------|--------|--------|-------|
+|  PNG  |       |   ✅   |  ✅   |   ✅   |   ✅   |  ✅   |
+|  JPEG |  ✅   |        |  ✅   |   ✅   |   ✅   |  ✅   |
+|  GIF  |  ✅   |   ✅   |       |   ✅   |   ✅   |  ✅   |
+|  WEBP |  ✅   |   ✅   |  ✅   |        |   ✅   |  ✅   |
+|  TIFF |  ✅   |   ✅   |  ✅   |   ✅   |        |  ✅   |
+|  BMP  |  ✅   |   ✅   |  ✅   |   ✅   |   ✅   |       |
+
 ## License
 The MIT License (MIT). See [LICENSE](LICENSE) file for more details.
