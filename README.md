@@ -8,9 +8,12 @@ __Self-Hosted file converter server.__
 ## Table of contents
 
 - [Overview](#overview)
-- [Installation](#Installation)
-    - [Docker](#Docker)
+- [Installation](#installation)
+    - [Docker](#docker)
 - [Features](#features)
+- [Usage](#usage)
+- [Supported Files](#supported-files-and-convert-matrix)
+    - [Images](#images-x-images)
 - [License](#license)
 
 ## Overview
