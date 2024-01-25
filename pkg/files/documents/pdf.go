@@ -279,16 +279,6 @@ func convertPDFPageToImage(
 	return img, nil
 }
 
-func filenameWithoutExtension(filename string) string {
-	filenameParts := strings.Split(filename, ".")
-
-	if len(filenameParts) > 1 {
-		return filenameParts[0]
-	}
-
-	return ""
-}
-
 // DocumentType returns the type of ducument of Pdf.
 func (p *Pdf) DocumentType() string {
 	return PDF

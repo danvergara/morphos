@@ -13,7 +13,9 @@ __Self-Hosted file converter server.__
 - [Features](#features)
 - [Usage](#usage)
 - [Supported Files](#supported-files-and-convert-matrix)
-    - [Images](#images-x-images)
+    - [Images To Images](#images-x-images)
+    - [Images To Documents](#images-x-documents)
+    - [Documents To Images](#documents-x-images)
 - [License](#license)
 
 ## Overview
@@ -63,7 +65,7 @@ A modal will pop up with a preview of the converted image.
 
 ## Supported Files And Convert Matrix
 
-### Images x Images
+### Images X Images
 
 |       |  PNG  |  JPEG  |  GIF  |  WEBP  |  TIFF  |  BMP  |
 |-------|-------|--------|-------|--------|--------|-------|
@@ -73,6 +75,23 @@ A modal will pop up with a preview of the converted image.
 |  WEBP |  ✅   |   ✅   |  ✅   |        |   ✅   |  ✅   |
 |  TIFF |  ✅   |   ✅   |  ✅   |   ✅   |        |  ✅   |
 |  BMP  |  ✅   |   ✅   |  ✅   |   ✅   |   ✅   |       |
+
+### Images X Documents
+
+|       |  PDF  |
+|-------|-------|
+|  PNG  |  ✅   |
+|  JPEG |  ✅   |
+|  GIF  |  ✅   |
+|  WEBP |  ✅   |
+|  TIFF |  ✅   |
+|  BMP  |  ✅   |
+
+## Documents X Images
+
+|       |  PNG  |  JPEG  |  GIF  |  WEBP  |  TIFF  |  BMP  |
+|-------|-------|--------|-------|--------|--------|-------|
+|  PDF  |  ✅   |   ✅   |  ✅   |   ✅   |   ✅   |  ✅   |
 
 ## License
 The MIT License (MIT). See [LICENSE](LICENSE) file for more details.
