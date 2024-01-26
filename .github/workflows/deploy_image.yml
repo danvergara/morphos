@@ -18,19 +18,19 @@ jobs:
         uses: docker/setup-qemu-action@v3
       # Script for setting the version without the leading 'v'
       - name: Set Versions
-        uses: actions/github-script@v4
+        uses: actions/github-script@v7
         id: set_version
         with:
           script: |
-            # Get the tag
+            // Get the tag
             const tag = context.ref.substring(10)
-            # Replace the tag with one without 'v'
+            // Replace the tag with one without v
             const no_v = tag.replace('v', '')
-            # Looks for a dash
+            // Looks for a dash
             const dash_index = no_v.lastIndexOf('-')
-            # If any, removes it, otherwise return the value unchanged
+            // If any, removes it, otherwise return the value unchanged
             const no_dash = (dash_index > -1) ?  no_v.substring(0, dash_index) : no_v
-            # Set the tag, no-v and no-dash as output variables
+            // Set the tag, no-v and no-dash as output variables
             core.setOutput('tag', tag)
             core.setOutput('no-v', no_v)
             core.setOutput('no-dash', no_dash)
