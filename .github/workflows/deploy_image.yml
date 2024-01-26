@@ -3,7 +3,7 @@ name: Deploy Morphos Server Container Image
 on:
   push:
     tags:
-      - '[0-9]+.[0-9]+.[0-9]+' # Only build on tag with semantic versioning format
+      - 'v[0-9]+.[0-9]+.[0-9]+' # Only build on tag with semantic versioning format
 
 jobs:
   push_morphos_image:
@@ -15,8 +15,24 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
       - name: Set up QEMU
-      - name: Set release tag env variable
-        run: echo "RELEASE_VERSION=${GITHUB_REF#refs/*/}" >> $GITHUB_ENV
+      # Script for setting the version without the leading 'v'
+      - name: Set Versions
+        uses: actions/github-script@v4
+        id: set_version
+        with:
+          script: |
+            # Get the tag
+            const tag = context.ref.substring(10)
+            # Replace the tag with one without 'v'
+            const no_v = tag.replace('v', '')
+            # Looks for a dash
+            const dash_index = no_v.lastIndexOf('-')
+            # If any, removes it, otherwise return the value unchanged
+            const no_dash = (dash_index > -1) ?  no_v.substring(0, dash_index) : no_v
+            # Set the tag, no-v and no-dash as output variables
+            core.setOutput('tag', tag)
+            core.setOutput('no-v', no_v)
+            core.setOutput('no-dash', no_dash)
         uses: docker/setup-qemu-action@v3
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
@@ -32,6 +48,6 @@ jobs:
           context: .
           platforms: linux/amd64,linux/arm64
           push: true
-          tags: ghcr.io/${{ github.actor }}/morphos-server:latest, ghcr.io/${{ github.actor }}/morphos-server:${{ env.RELEASE_VERSION }}
+          tags: ghcr.io/${{ github.actor }}/morphos-server:latest, ghcr.io/${{ github.actor }}/morphos-server:${{steps.set_version.outputs.no-dash}}
       - name: Release
         uses: softprops/action-gh-release@v1
