@@ -33,3 +33,5 @@ jobs:
           platforms: linux/amd64,linux/arm64
           push: true
           tags: ghcr.io/${{ github.actor }}/morphos-server:latest, ghcr.io/${{ github.actor }}/morphos-server:${{ env.RELEASE_VERSION }}
+      - name: Release
+        uses: softprops/action-gh-release@v1
