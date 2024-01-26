@@ -9,7 +9,7 @@ jobs:
   push_morphos_image:
     runs-on: ubuntu-latest
     permissions:
-      contents: read
+      contents: write
       packages: write
     steps:
       - name: Checkout
