@@ -15,6 +15,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
       - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
       # Script for setting the version without the leading 'v'
       - name: Set Versions
         uses: actions/github-script@v4
