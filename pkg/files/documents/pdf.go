@@ -16,6 +16,8 @@ import (
 	"strings"
 
 	"github.com/chai2010/webp"
+	"github.com/unidoc/unioffice/document"
+	"github.com/unidoc/unipdf/v3/extractor"
 	"github.com/unidoc/unipdf/v3/model"
 	"github.com/unidoc/unipdf/v3/render"
 	"golang.org/x/image/bmp"
@@ -43,6 +45,9 @@ func NewPdf(filename string) *Pdf {
 				images.WEBP,
 				images.TIFF,
 				images.BMP,
+			},
+			"Document": {
+				DOCX,
 			},
 		},
 	}
@@ -243,6 +248,59 @@ func (p *Pdf) ConvertTo(fileType, subType string, fileBytes []byte) ([]byte, err
 		}
 
 		return zipFile, nil
+	case documentType:
+		switch subType {
+		case DOCX:
+			pdfReader, err := model.NewPdfReader(bytes.NewReader(fileBytes))
+			if err != nil {
+				return nil, fmt.Errorf("ConvertTo: error at opening the input pdf: %w", err)
+			}
+
+			// Get the number of pages from the pdf file.
+			pages, err := pdfReader.GetNumPages()
+			if err != nil {
+				return nil, fmt.Errorf(
+					"ConvertTo: error at getting the number of pages from the input pdf: %w",
+					err,
+				)
+			}
+
+			doc := document.New()
+			for pageNum := 1; pageNum <= pages; pageNum++ {
+				page, err := pdfReader.GetPage(pageNum)
+				if err != nil {
+					if err != nil {
+						return nil, fmt.Errorf(
+							"ConvertTo: error at getting the current page %d: %w",
+							pageNum,
+							err,
+						)
+					}
+				}
+
+				extractor, err := extractor.New(page)
+				if err != nil {
+					return nil, fmt.Errorf(
+						"ConvertTo: error at extracting the content of the current page %d: %w",
+						pageNum,
+						err,
+					)
+				}
+
+				text, err := extractor.ExtractText()
+				if err != nil {
+					return nil, fmt.Errorf(
+						"ConvertTo: error at extracting the content of the current page %d: %w",
+						pageNum,
+						err,
+					)
+				}
+
+				para := doc.AddParagraph()
+				run := para.AddRun()
+				run.AddText(text)
+			}
+		}
 	}
 
 	return nil, errors.New("not implemented")
