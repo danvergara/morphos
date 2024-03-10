@@ -27,9 +27,10 @@ import (
 
 // Pdf struct implements the File and Document interface from the file package.
 type Pdf struct {
-	filename          string
-	compatibleFormats map[string][]string
-	OutDir            string
+	filename            string
+	compatibleFormats   map[string][]string
+	compatibleMIMETypes map[string][]string
+	OutDir              string
 }
 
 // NewPdf returns a pointer to Pdf.
@@ -50,15 +51,35 @@ func NewPdf(filename string) *Pdf {
 				DOCX,
 			},
 		},
+		compatibleMIMETypes: map[string][]string{
+			"Image": {
+				images.JPG,
+				images.JPEG,
+				images.PNG,
+				images.GIF,
+				images.WEBP,
+				images.TIFF,
+				images.BMP,
+			},
+			"Document": {
+				DOCXMIMEType,
+			},
+		},
 	}
 
 	return &p
 }
 
-// SupportedFormats returns a map witht he compatible formats that Pds is
+// SupportedFormats returns a map witht the compatible formats that Pdf is
 // compatible to be converted to.
 func (p *Pdf) SupportedFormats() map[string][]string {
 	return p.compatibleFormats
+}
+
+// SupportedMIMETypes returns a map witht the compatible MIME types that Pdf is
+// compatible to be converted to.
+func (p *Pdf) SupportedMIMETypes() map[string][]string {
+	return p.compatibleMIMETypes
 }
 
 // ConvertTo converts the current PDF file to another given format.

@@ -12,16 +12,24 @@ import (
 	"strings"
 )
 
+// Docx struct implements the File and Document interface from the file package.
 type Docx struct {
-	filename          string
-	compatibleFormats map[string][]string
-	OutDir            string
+	filename            string
+	compatibleFormats   map[string][]string
+	compatibleMIMETypes map[string][]string
+	OutDir              string
 }
 
+// NewDocx returns a pointer to Docx.
 func NewDocx(filename string) *Docx {
 	d := Docx{
 		filename: filename,
 		compatibleFormats: map[string][]string{
+			"Document": {
+				PDF,
+			},
+		},
+		compatibleMIMETypes: map[string][]string{
 			"Document": {
 				PDF,
 			},
@@ -31,10 +39,16 @@ func NewDocx(filename string) *Docx {
 	return &d
 }
 
-// SupportedFormats returns a map witht he compatible formats that Pds is
+// SupportedFormats returns a map witht the compatible formats that Docx is
 // compatible to be converted to.
 func (d *Docx) SupportedFormats() map[string][]string {
 	return d.compatibleFormats
+}
+
+// SupportedMIMETypes returns a map witht the compatible MIME types that Docx is
+// compatible to be converted to.
+func (d *Docx) SupportedMIMETypes() map[string][]string {
+	return d.compatibleMIMETypes
 }
 
 func (d *Docx) ConvertTo(fileType, subType string, fileBytes []byte) ([]byte, error) {
