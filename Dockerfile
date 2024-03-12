@@ -24,6 +24,12 @@ FROM debian:bookworm-slim AS release
 
 WORKDIR /
 
+RUN apt-get update \
+   && apt-get install -y --no-install-recommends  libreoffice \
+   && apt-get autoremove -y \
+   && apt-get purge -y --auto-remove \
+   && rm -rf /var/lib/apt/lists/*
+
 COPY --from=builder /app/morphos /bin/morphos
 COPY --from=builder /usr/share/fonts /usr/share/fonts
 
