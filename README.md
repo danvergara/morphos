@@ -89,9 +89,16 @@ A modal will pop up with a preview of the converted image.
 
 ## Documents X Images
 
-|       |  PNG  |  JPEG  |  GIF  |  WEBP  |  TIFF  |  BMP  |
-|-------|-------|--------|-------|--------|--------|-------|
-|  PDF  |  ✅   |   ✅   |  ✅   |   ✅   |   ✅   |  ✅   |
+|     | PNG | JPEG | GIF | WEBP | TIFF | BMP |
+| --- | --- | ---- | --- | ---- | ---- | --- |
+| PDF | ✅  | ✅   | ✅  | ✅   | ✅   | ✅  |
+
+## Documents X Documents
+
+|      | DOCX | PDF |
+| ---- | ---- | --- |
+| PDF  | ✅   |     |
+| DOCX |      | ✅  |
 
 ## License
 The MIT License (MIT). See [LICENSE](LICENSE) file for more details.
