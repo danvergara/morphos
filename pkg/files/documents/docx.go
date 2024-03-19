@@ -2,9 +2,11 @@ package documents
 
 import (
 	"archive/zip"
+	"bytes"
 	"errors"
 	"fmt"
 	"io"
+	"log"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -65,6 +67,11 @@ func (d *Docx) ConvertTo(fileType, subType string, fileBytes []byte) ([]byte, er
 	case documentType:
 		switch subType {
 		case PDF:
+			var (
+				stdout bytes.Buffer
+				stderr bytes.Buffer
+			)
+
 			docxFilename := filepath.Join("/tmp", d.filename)
 			pdfFileName := fmt.Sprintf(
 				"%s.pdf",
@@ -114,9 +121,17 @@ func (d *Docx) ConvertTo(fileType, subType string, fileBytes []byte) ([]byte, er
 				fmt.Sprintf(cmdStr, "/tmp", docxFilename),
 			)
 
+			cmd.Stdout = &stdout
+			cmd.Stderr = &stderr
+
 			if err := cmd.Run(); err != nil {
-				return nil, errors.New("error converting docx to pdf using libreoffice")
+				return nil, fmt.Errorf(
+					"error converting docx to pdf using libreoffice: %s",
+					stderr.String(),
+				)
 			}
+
+			log.Println(stdout.String())
 
 			tmpPdfFile.Close()
 

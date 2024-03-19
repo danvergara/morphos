@@ -10,6 +10,7 @@ import (
 	"image/jpeg"
 	"image/png"
 	"io"
+	"log"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -272,6 +273,11 @@ func (p *Pdf) ConvertTo(fileType, subType string, fileBytes []byte) ([]byte, err
 	case documentType:
 		switch subType {
 		case DOCX:
+			var (
+				stdout bytes.Buffer
+				stderr bytes.Buffer
+			)
+
 			pdfFilename := filepath.Join("/tmp", p.filename)
 			docxFileName := fmt.Sprintf(
 				"%s.docx",
@@ -314,18 +320,24 @@ func (p *Pdf) ConvertTo(fileType, subType string, fileBytes []byte) ([]byte, err
 				)
 			}
 
-			// libreoffice --headless --infilter='writer_pdf_import' --convert-to docx:"MS Word 2007 XML" --outdir . foo.pdf
-
-			cmdStr := "libreoffice --invisible --headless --infilter='writer_pdf_import' --convert-to %s --outdir %s %s"
+			cmdStr := "libreoffice --headless --infilter='writer_pdf_import' --convert-to %s --outdir %s %s"
 			cmd := exec.Command(
 				"bash",
 				"-c",
 				fmt.Sprintf(cmdStr, `docx:"MS Word 2007 XML"`, "/tmp", pdfFilename),
 			)
 
+			cmd.Stdout = &stdout
+			cmd.Stderr = &stderr
+
 			if err := cmd.Run(); err != nil {
-				return nil, errors.New("error converting pdf to docx using libreoffice")
+				return nil, fmt.Errorf(
+					"error converting pdf to docx using libreoffice: %s",
+					stderr.String(),
+				)
 			}
+
+			log.Println(stdout.String())
 
 			tmpDocxFile.Close()
 
