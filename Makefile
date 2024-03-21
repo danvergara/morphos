@@ -12,6 +12,11 @@ run:
 download-htmx:
 	curl -o static/htmx.min.js https://unpkg.com/htmx.org@${HTMX_VERSION}/dist/htmx.min.js
 
+.PHONY: download-htmx-resp-targ
+## download-htmx-resp-targ: Downloads the HTMX response target extension
+download-htmx-resp-targ:
+	curl -o static/response-targets.js https://unpkg.com/htmx.org@${HTMX_VERSION}/dist/ext/response-targets.js
+
 .PHONY: download-bootstrap
 ## download-bootstrap: Downloads Bootstrap minified css/js file
 download-bootstrap:
