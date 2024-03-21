@@ -320,7 +320,7 @@ func (p *Pdf) ConvertTo(fileType, subType string, fileBytes []byte) ([]byte, err
 				)
 			}
 
-			cmdStr := "libreoffice --headless --infilter='writer_pdf_import' --convert-to %s --outdir %s %s"
+			cmdStr := "libreoffice --headless --infilter='writer_pdf_import' --convert-to %s --outdir %s %q"
 			cmd := exec.Command(
 				"bash",
 				"-c",
