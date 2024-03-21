@@ -332,7 +332,14 @@ func (p *Pdf) ConvertTo(fileType, subType string, fileBytes []byte) ([]byte, err
 
 			if err := cmd.Run(); err != nil {
 				return nil, fmt.Errorf(
-					"error converting pdf to docx using libreoffice: %s",
+					"error converting pdf to docx using libreoffice: %w",
+					err,
+				)
+			}
+
+			if stderr.String() != "" {
+				return nil, fmt.Errorf(
+					"error converting pdf to docx calling libreoffice: %s",
 					stderr.String(),
 				)
 			}
