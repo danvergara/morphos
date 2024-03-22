@@ -114,7 +114,7 @@ func (d *Docx) ConvertTo(fileType, subType string, fileBytes []byte) ([]byte, er
 				)
 			}
 
-			cmdStr := "libreoffice --headless --convert-to pdf:writer_pdf_Export --outdir %s %s"
+			cmdStr := "libreoffice --headless --convert-to pdf:writer_pdf_Export --outdir %s %q"
 			cmd := exec.Command(
 				"bash",
 				"-c",
@@ -127,6 +127,13 @@ func (d *Docx) ConvertTo(fileType, subType string, fileBytes []byte) ([]byte, er
 			if err := cmd.Run(); err != nil {
 				return nil, fmt.Errorf(
 					"error converting docx to pdf using libreoffice: %s",
+					err,
+				)
+			}
+
+			if stderr.String() != "" {
+				return nil, fmt.Errorf(
+					"error converting docx to pdf calling libreoffice: %s",
 					stderr.String(),
 				)
 			}
