@@ -12,7 +12,8 @@ import (
 
 // Png struct implements the File and Image interface from the files pkg.
 type Png struct {
-	compatibleFormats map[string][]string
+	compatibleFormats   map[string][]string
+	compatibleMIMETypes map[string][]string
 }
 
 // NewPng returns a pointer to a Png instance.
@@ -20,6 +21,19 @@ type Png struct {
 func NewPng() *Png {
 	p := Png{
 		compatibleFormats: map[string][]string{
+			"Image": {
+				JPG,
+				JPEG,
+				GIF,
+				WEBP,
+				TIFF,
+				BMP,
+			},
+			"Document": {
+				PDF,
+			},
+		},
+		compatibleMIMETypes: map[string][]string{
 			"Image": {
 				JPG,
 				JPEG,
@@ -41,6 +55,11 @@ func NewPng() *Png {
 // Every key of the map represents the kind of a file.
 func (p *Png) SupportedFormats() map[string][]string {
 	return p.compatibleFormats
+}
+
+// SupportedMIMETypes returns a map with a slice of supported MIME types.
+func (p *Png) SupportedMIMETypes() map[string][]string {
+	return p.compatibleMIMETypes
 }
 
 // ConvertTo method converts a given file to a target format.

@@ -11,7 +11,8 @@ import (
 
 // Bmp struct implements the File and Image interface from the files pkg.
 type Bmp struct {
-	compatibleFormats map[string][]string
+	compatibleFormats   map[string][]string
+	compatibleMIMETypes map[string][]string
 }
 
 // NewBmp returns a pointer to a Bmp instance.
@@ -19,6 +20,19 @@ type Bmp struct {
 func NewBmp() *Bmp {
 	b := Bmp{
 		compatibleFormats: map[string][]string{
+			"Image": {
+				JPG,
+				JPEG,
+				PNG,
+				GIF,
+				TIFF,
+				WEBP,
+			},
+			"Document": {
+				PDF,
+			},
+		},
+		compatibleMIMETypes: map[string][]string{
 			"Image": {
 				JPG,
 				JPEG,
@@ -40,6 +54,11 @@ func NewBmp() *Bmp {
 // Every key of the map represents a kind of a file.
 func (b *Bmp) SupportedFormats() map[string][]string {
 	return b.compatibleFormats
+}
+
+// SupportedMIMETypes returns a map with a slice of supported MIME types.
+func (b *Bmp) SupportedMIMETypes() map[string][]string {
+	return b.compatibleMIMETypes
 }
 
 // ConvertTo method converts a given file to a target format.

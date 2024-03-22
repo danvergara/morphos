@@ -1,8 +1,9 @@
 package documents
 
 const (
-	DOCX = "docx"
-	PDF  = "pdf"
+	DOCX         = "docx"
+	DOCXMIMEType = "vnd.openxmlformats-officedocument.wordprocessingml.document"
+	PDF          = "pdf"
 
 	imageMimeType = "image/"
 	imageType     = "image"

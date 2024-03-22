@@ -4,8 +4,15 @@ package files
 // that defines what a file is in this context.
 // It's moslty responsible to say other entitites what formats it can be converted to
 // and provides a method to convert the current file given a target format, if supported.
+// SupportedMIMETypes was added to tell between how we see files, categorized by
+// extension, and how they are registered as MIME types.
+// e.g.
+// Kind of document: 	Microsoft Word (OpenXML)
+// Extension: docx
+// MIME Type: application/vnd.openxmlformats-officedocument.wordprocessingml.document
 type File interface {
 	SupportedFormats() map[string][]string
+	SupportedMIMETypes() map[string][]string
 	ConvertTo(string, string, []byte) ([]byte, error)
 }
 

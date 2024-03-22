@@ -10,7 +10,8 @@ import (
 
 // Gif struct implements the File and Image interface from the files pkg.
 type Gif struct {
-	compatibleFormats map[string][]string
+	compatibleFormats   map[string][]string
+	compatibleMIMETypes map[string][]string
 }
 
 // NewGif returns a pointer to a Gif instance.
@@ -18,6 +19,19 @@ type Gif struct {
 func NewGif() *Gif {
 	g := Gif{
 		compatibleFormats: map[string][]string{
+			"Image": {
+				JPG,
+				JPEG,
+				PNG,
+				WEBP,
+				TIFF,
+				BMP,
+			},
+			"Document": {
+				PDF,
+			},
+		},
+		compatibleMIMETypes: map[string][]string{
 			"Image": {
 				JPG,
 				JPEG,
@@ -39,6 +53,11 @@ func NewGif() *Gif {
 // Every key of the map represents the kind of a file.
 func (g *Gif) SupportedFormats() map[string][]string {
 	return g.compatibleFormats
+}
+
+// SupportedMIMETypes returns a map with a slice of supported MIME types.
+func (g *Gif) SupportedMIMETypes() map[string][]string {
+	return g.compatibleMIMETypes
 }
 
 // ConvertTo method converts a given file to a target format.

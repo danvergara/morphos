@@ -12,7 +12,8 @@ import (
 
 // Jpeg struct implements the File and Image interface from the files pkg.
 type Jpeg struct {
-	compatibleFormats map[string][]string
+	compatibleFormats   map[string][]string
+	compatibleMIMETypes map[string][]string
 }
 
 // NewJpeg returns a pointer to a Jpeg instance.
@@ -20,6 +21,19 @@ type Jpeg struct {
 func NewJpeg() *Jpeg {
 	j := Jpeg{
 		compatibleFormats: map[string][]string{
+			"Image": {
+				PNG,
+				GIF,
+				WEBP,
+				TIFF,
+				BMP,
+			},
+			"Document": {
+				PDF,
+			},
+		},
+
+		compatibleMIMETypes: map[string][]string{
 			"Image": {
 				PNG,
 				GIF,
@@ -40,6 +54,11 @@ func NewJpeg() *Jpeg {
 // Every key of the map represents a kind of a file.
 func (j *Jpeg) SupportedFormats() map[string][]string {
 	return j.compatibleFormats
+}
+
+// SupportedMIMETypes returns a map with a slice of supported MIME types.
+func (j *Jpeg) SupportedMIMETypes() map[string][]string {
+	return j.compatibleMIMETypes
 }
 
 // ConvertTo method converts a given file to a target format.

@@ -13,7 +13,8 @@ import (
 
 // Webp struct implements the File and Image interface from the files pkg.
 type Webp struct {
-	compatibleFormats map[string][]string
+	compatibleFormats   map[string][]string
+	compatibleMIMETypes map[string][]string
 }
 
 // NewWebp returns a pointer to a Webp instance.
@@ -21,6 +22,19 @@ type Webp struct {
 func NewWebp() *Webp {
 	w := Webp{
 		compatibleFormats: map[string][]string{
+			"Image": {
+				JPG,
+				JPEG,
+				PNG,
+				GIF,
+				TIFF,
+				BMP,
+			},
+			"Document": {
+				PDF,
+			},
+		},
+		compatibleMIMETypes: map[string][]string{
 			"Image": {
 				JPG,
 				JPEG,
@@ -42,6 +56,11 @@ func NewWebp() *Webp {
 // Every key of the map represents the kind of a file.
 func (w *Webp) SupportedFormats() map[string][]string {
 	return w.compatibleFormats
+}
+
+// SupportedMIMETypes returns a map with a slice of supported MIME types.
+func (w *Webp) SupportedMIMETypes() map[string][]string {
+	return w.compatibleMIMETypes
 }
 
 // ConvertTo method converts a given file to a target format.
