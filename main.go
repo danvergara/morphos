@@ -62,14 +62,14 @@ func index(w http.ResponseWriter, _ *http.Request) {
 	tmpl, err := template.ParseFS(templatesHTML, tmpls...)
 	if err != nil {
 		log.Printf("error ocurred parsing templates: %v", err)
-		renderError(w, "INTERNAL_ERROR", http.StatusInternalServerError)
+		renderError(w, "internal error", http.StatusInternalServerError)
 		return
 	}
 
 	err = tmpl.ExecuteTemplate(w, "base", nil)
 	if err != nil {
 		log.Printf("error ocurred executing template: %v", err)
-		renderError(w, "INTERNAL_ERROR", http.StatusInternalServerError)
+		renderError(w, "internal error", http.StatusInternalServerError)
 		return
 	}
 }
@@ -86,7 +86,7 @@ func handleUploadFile(w http.ResponseWriter, r *http.Request) {
 	file, fileHeader, err := r.FormFile(uploadFileFormField)
 	if err != nil {
 		log.Printf("error ocurred getting file from form: %v", err)
-		renderError(w, "INVALID_FILE", http.StatusBadRequest)
+		renderError(w, "invalid file", http.StatusBadRequest)
 		return
 	}
 	defer file.Close()
@@ -94,7 +94,7 @@ func handleUploadFile(w http.ResponseWriter, r *http.Request) {
 	fileBytes, err := io.ReadAll(file)
 	if err != nil {
 		log.Printf("error ocurred reading file: %v", err)
-		renderError(w, "INVALID_FILE", http.StatusBadRequest)
+		renderError(w, "invalid file", http.StatusBadRequest)
 		return
 	}
 
@@ -105,21 +105,21 @@ func handleUploadFile(w http.ResponseWriter, r *http.Request) {
 	fileType, subType, err := files.TypeAndSupType(detectedFileType.String())
 	if err != nil {
 		log.Printf("error occurred getting type and subtype from mimetype: %v", err)
-		renderError(w, "INVALID_FILE", http.StatusBadRequest)
+		renderError(w, "invalid file", http.StatusBadRequest)
 		return
 	}
 
 	fileFactory, err := files.BuildFactory(fileType, fileHeader.Filename)
 	if err != nil {
 		log.Printf("error occurred while getting a file factory: %v", err)
-		renderError(w, "INVALID_FILE", http.StatusBadRequest)
+		renderError(w, "invalid file", http.StatusBadRequest)
 		return
 	}
 
 	f, err := fileFactory.NewFile(subType)
 	if err != nil {
 		log.Printf("error occurred getting the file object: %v", err)
-		renderError(w, "INVALID_FILE", http.StatusBadRequest)
+		renderError(w, "invalid file", http.StatusBadRequest)
 		return
 	}
 
@@ -131,7 +131,7 @@ func handleUploadFile(w http.ResponseWriter, r *http.Request) {
 	)
 	if err != nil {
 		log.Printf("error ocurred while converting image %v", err)
-		renderError(w, "INTERNAL_ERROR", http.StatusInternalServerError)
+		renderError(w, "internal error", http.StatusInternalServerError)
 		return
 	}
 
@@ -163,7 +163,7 @@ func handleUploadFile(w http.ResponseWriter, r *http.Request) {
 	tmpl, err := template.ParseFS(templatesHTML, tmpls...)
 	if err != nil {
 		log.Printf("error occurred parsing template files: %v", err)
-		renderError(w, "INTERNAL_ERROR", http.StatusInternalServerError)
+		renderError(w, "internal error", http.StatusInternalServerError)
 		return
 	}
 
@@ -172,7 +172,7 @@ func handleUploadFile(w http.ResponseWriter, r *http.Request) {
 	convertedFileType, _, err := files.TypeAndSupType(convertedFileMimeType.String())
 	if err != nil {
 		log.Printf("error occurred getting the file type of the result file: %v", err)
-		renderError(w, "INTERNAL_ERROR", http.StatusInternalServerError)
+		renderError(w, "internal error", http.StatusInternalServerError)
 		return
 	}
 
@@ -183,7 +183,7 @@ func handleUploadFile(w http.ResponseWriter, r *http.Request) {
 	)
 	if err != nil {
 		log.Printf("error occurred executing template files: %v", err)
-		renderError(w, "INTERNAL_ERROR", http.StatusInternalServerError)
+		renderError(w, "internal error", http.StatusInternalServerError)
 		return
 	}
 }
@@ -192,15 +192,15 @@ func handleFileFormat(w http.ResponseWriter, r *http.Request) {
 
 	file, _, err := r.FormFile(uploadFileFormField)
 	if err != nil {
-		log.Printf("error ocurred getting file from form: %v", err)
-		renderError(w, "INVALID_FILE", http.StatusBadRequest)
+		log.Printf("error ocurred while getting file from form: %v", err)
+		renderError(w, "invalid file", http.StatusBadRequest)
 		return
 	}
 
 	fileBytes, err := io.ReadAll(file)
 	if err != nil {
-		log.Printf("error occurred executing template files: %v", err)
-		renderError(w, "INVALID_FILE", http.StatusBadRequest)
+		log.Printf("error occurred while executing template files: %v", err)
+		renderError(w, "invalid file", http.StatusBadRequest)
 		return
 	}
 
@@ -213,28 +213,28 @@ func handleFileFormat(w http.ResponseWriter, r *http.Request) {
 	fileType, subType, err := files.TypeAndSupType(detectedFileType.String())
 	if err != nil {
 		log.Printf("error occurred getting type and subtype from mimetype: %v", err)
-		renderError(w, "INVALID_FILE", http.StatusBadRequest)
+		renderError(w, "invalid file format", http.StatusBadRequest)
 		return
 	}
 
 	fileFactory, err := files.BuildFactory(fileType, "")
 	if err != nil {
 		log.Printf("error occurred while getting a file factory: %v", err)
-		renderError(w, "INVALID_FILE", http.StatusBadRequest)
+		renderError(w, "invalid file", http.StatusBadRequest)
 		return
 	}
 
 	f, err := fileFactory.NewFile(subType)
 	if err != nil {
 		log.Printf("error occurred getting the file object: %v", err)
-		renderError(w, "INTERNAL_ERROR", http.StatusInternalServerError)
+		renderError(w, "internal error", http.StatusInternalServerError)
 		return
 	}
 
 	tmpl, err := template.ParseFS(templatesHTML, templates...)
 	if err = tmpl.ExecuteTemplate(w, "format-elements", f.SupportedFormats()); err != nil {
 		log.Printf("error occurred parsing template files: %v", err)
-		renderError(w, "INTERNAL_ERROR", http.StatusInternalServerError)
+		renderError(w, "internal error", http.StatusInternalServerError)
 		return
 	}
 }
@@ -250,13 +250,13 @@ func handleModal(w http.ResponseWriter, r *http.Request) {
 	tmpl, err := template.ParseFS(templatesHTML, tmpls...)
 	if err != nil {
 		log.Printf("error occurred parsing template files: %v", err)
-		renderError(w, "INTERNAL_ERROR", http.StatusInternalServerError)
+		renderError(w, "internal error", http.StatusInternalServerError)
 		return
 	}
 
 	if err = tmpl.ExecuteTemplate(w, "content", ConvertedFile{Filename: filename, FileType: filetype}); err != nil {
 		log.Printf("error occurred executing template files: %v", err)
-		renderError(w, "INTERNAL_ERROR", http.StatusInternalServerError)
+		renderError(w, "internal error", http.StatusInternalServerError)
 		return
 	}
 }
@@ -288,7 +288,8 @@ func main() {
 
 func renderError(w http.ResponseWriter, message string, statusCode int) {
 	w.WriteHeader(statusCode)
-	w.Write([]byte(message))
+	tmpl, _ := template.ParseFS(templatesHTML, "templates/partials/error.tmpl")
+	tmpl.ExecuteTemplate(w, "error", struct{ ErrorMessage string }{ErrorMessage: message})
 }
 
 func fileNameWithoutExtension(fileName string) string {
