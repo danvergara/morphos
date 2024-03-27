@@ -26,6 +26,6 @@ func BuildFactory(f string, filename string) (FileFactory, error) {
 	case Doc, Application:
 		return NewDocumentFactory(filename), nil
 	default:
-		return nil, fmt.Errorf("factory with id %s not recognized", f)
+		return nil, fmt.Errorf("factory with type file %s not recognized", f)
 	}
 }

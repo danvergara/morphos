@@ -2,12 +2,13 @@
 
 {{define "content"}}
 <div class="row align-items-center" style="height: 50vh;">
-  <div class="mx-auto col-10 col-md-8 col-lg-6">
+  <div class="mx-auto col-10 col-md-8 col-lg-6" hx-ext="response-targets">
     <form id="form"
           hx-encoding="multipart/form-data"
           hx-post="/upload"
           hx-swap="outerHTML"
-          hx-indicator="#spinner">
+          hx-indicator="#spinner"
+          hx-target-error="#any-errors">
       <h2>File Converter</h2>
       <div class="row g-3">
         <div class="col-sm-7">
@@ -42,6 +43,7 @@
           </button>
           <progress id='progress' class='htmx-indicator' value='0' max='100'></progress>
         </div>
+        <div id="any-errors"></div>
       </div>
     </form>
   </div>
