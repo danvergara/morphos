@@ -2,6 +2,7 @@ package main
 
 import (
 	"embed"
+	"errors"
 	"fmt"
 	"html/template"
 	"io"
@@ -40,6 +41,58 @@ func init() {
 	uploadPath = os.Getenv("TMP_DIR")
 	if uploadPath == "" {
 		uploadPath = "/tmp"
+	}
+}
+
+// statusError struct is the error representation
+// at the HTTP layer.
+type statusError struct {
+	error
+	status int
+}
+
+// Unwrap method returns the inner error.
+func (e statusError) Unwrap() error { return e.error }
+
+// HTTPStatus returns a HTTP status code.
+func HTTPStatus(err error) int {
+	if err == nil {
+		return 0
+	}
+
+	var statusErr interface {
+		error
+		HTTPStatus() int
+	}
+
+	// Checks if err implements the statusErr interface.
+	if errors.As(err, &statusErr) {
+		return statusErr.HTTPStatus()
+	}
+
+	// Returns a default status code if none is provided.
+	return http.StatusInternalServerError
+}
+
+// WithHTTPStatus returns an error with the original error and the status code.
+func WithHTTPStatus(err error, status int) error {
+	return statusError{
+		error:  err,
+		status: status,
+	}
+}
+
+// toHandler is a wrapper for functions that have the following signature:
+// func(http.ResponseWriter, *http.Request) error
+// So, regular handlers can return an error that can be unwrapped.
+// If an errors is received at the time to execute the original handler,
+// renderError function is called.
+func toHandler(f func(http.ResponseWriter, *http.Request) error) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		err := f(w, r)
+		if err != nil {
+			renderError(w, err.Error(), HTTPStatus(err))
+		}
 	}
 }
 
