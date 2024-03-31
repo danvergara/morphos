@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"embed"
 	"errors"
 	"fmt"
@@ -129,7 +130,7 @@ func index(w http.ResponseWriter, _ *http.Request) error {
 
 func handleUploadFile(w http.ResponseWriter, r *http.Request) error {
 	var (
-		convertedFile     []byte
+		convertedFile     io.Reader
 		convertedFilePath string
 		convertedFileName string
 		err               error
@@ -175,7 +176,7 @@ func handleUploadFile(w http.ResponseWriter, r *http.Request) error {
 	convertedFile, err = f.ConvertTo(
 		cases.Title(language.English).String(targetFileType),
 		targetFileSubType,
-		fileBytes,
+		bytes.NewReader(fileBytes),
 	)
 	if err != nil {
 		log.Printf("error ocurred while converting image %v", err)
@@ -195,7 +196,13 @@ func handleUploadFile(w http.ResponseWriter, r *http.Request) error {
 		return WithHTTPStatus(err, http.StatusInternalServerError)
 	}
 	defer newFile.Close()
-	if _, err := newFile.Write(convertedFile); err != nil {
+
+	buf := new(bytes.Buffer)
+	if _, err := buf.ReadFrom(convertedFile); err != nil {
+	}
+
+	convertedFileBytes := buf.Bytes()
+	if _, err := newFile.Write(convertedFileBytes); err != nil {
 		log.Printf("error occurred writing file: %v", err)
 		return WithHTTPStatus(err, http.StatusInternalServerError)
 	}
@@ -211,7 +218,7 @@ func handleUploadFile(w http.ResponseWriter, r *http.Request) error {
 		return WithHTTPStatus(err, http.StatusInternalServerError)
 	}
 
-	convertedFileMimeType := mimetype.Detect(convertedFile)
+	convertedFileMimeType := mimetype.Detect(convertedFileBytes)
 
 	convertedFileType, _, err := files.TypeAndSupType(convertedFileMimeType.String())
 	if err != nil {

@@ -3,6 +3,7 @@ package images
 import (
 	"bytes"
 	"fmt"
+	"io"
 	"slices"
 	"strings"
 
@@ -63,7 +64,7 @@ func (t *Tiff) SupportedMIMETypes() map[string][]string {
 
 // ConvertTo method converts a given file to a target format.
 // This method returns a file in form of a slice of bytes.
-func (t *Tiff) ConvertTo(fileType, subType string, fileBytes []byte) ([]byte, error) {
+func (t *Tiff) ConvertTo(fileType, subType string, file io.Reader) (io.Reader, error) {
 
 	var result []byte
 
@@ -78,7 +79,7 @@ func (t *Tiff) ConvertTo(fileType, subType string, fileBytes []byte) ([]byte, er
 
 	switch strings.ToLower(fileType) {
 	case imageType:
-		img, err := tiff.Decode(bytes.NewReader(fileBytes))
+		img, err := tiff.Decode(file)
 		if err != nil {
 			return nil, err
 		}
@@ -91,7 +92,7 @@ func (t *Tiff) ConvertTo(fileType, subType string, fileBytes []byte) ([]byte, er
 			)
 		}
 	case documentType:
-		img, err := tiff.Decode(bytes.NewReader(fileBytes))
+		img, err := tiff.Decode(file)
 		if err != nil {
 			return nil, err
 		}
@@ -105,7 +106,7 @@ func (t *Tiff) ConvertTo(fileType, subType string, fileBytes []byte) ([]byte, er
 		}
 	}
 
-	return result, nil
+	return bytes.NewReader(result), nil
 }
 
 // ImageType returns the file format of the current image.

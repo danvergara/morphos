@@ -53,7 +53,7 @@ func (d *Docx) SupportedMIMETypes() map[string][]string {
 	return d.compatibleMIMETypes
 }
 
-func (d *Docx) ConvertTo(fileType, subType string, fileBytes []byte) ([]byte, error) {
+func (d *Docx) ConvertTo(fileType, subType string, file io.Reader) (io.Reader, error) {
 	compatibleFormats, ok := d.SupportedFormats()[fileType]
 	if !ok {
 		return nil, fmt.Errorf("file type not supported: %s", fileType)
@@ -62,6 +62,15 @@ func (d *Docx) ConvertTo(fileType, subType string, fileBytes []byte) ([]byte, er
 	if !slices.Contains(compatibleFormats, subType) {
 		return nil, fmt.Errorf("sub-type not supported: %s", subType)
 	}
+
+	buf := new(bytes.Buffer)
+	if _, err := buf.ReadFrom(file); err != nil {
+		return nil, fmt.Errorf(
+			"error getting the content of the docx file in form of slice of bytes: %w",
+			err,
+		)
+	}
+	fileBytes := buf.Bytes()
 
 	switch strings.ToLower(fileType) {
 	case documentType:
@@ -188,7 +197,7 @@ func (d *Docx) ConvertTo(fileType, subType string, fileBytes []byte) ([]byte, er
 				return nil, fmt.Errorf("error reading zip file: %v", err)
 			}
 
-			return zipFile, nil
+			return bytes.NewReader(zipFile), nil
 		}
 	}
 
