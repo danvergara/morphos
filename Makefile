@@ -1,4 +1,5 @@
 HTMX_VERSION=1.9.6
+RESPONSE_TARGETS_VERSION=1.9.11
 BOOTSTRAP_VERSION=5.3.2
 GO_VERSION=1.21.5
 
@@ -11,6 +12,11 @@ run:
 ## download-htmx: Downloads HTMX minified js file
 download-htmx:
 	curl -o static/htmx.min.js https://unpkg.com/htmx.org@${HTMX_VERSION}/dist/htmx.min.js
+
+.PHONY: download-htmx-resp-targ
+## download-htmx-resp-targ: Downloads the HTMX response target extension
+download-htmx-resp-targ:
+	curl -o static/response-targets.js https://unpkg.com/htmx.org@${RESPONSE_TARGETS_VERSION}/dist/ext/response-targets.js
 
 .PHONY: download-bootstrap
 ## download-bootstrap: Downloads Bootstrap minified css/js file
