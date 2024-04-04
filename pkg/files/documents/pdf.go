@@ -5,6 +5,7 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
+	"github.com/davidbyttow/govips/v2/vips"
 	"image"
 	"image/gif"
 	"image/jpeg"
@@ -17,7 +18,6 @@ import (
 	"slices"
 	"strings"
 
-	"github.com/chai2010/webp"
 	"github.com/unidoc/unipdf/v3/model"
 	"github.com/unidoc/unipdf/v3/render"
 	"golang.org/x/image/bmp"
@@ -199,14 +199,34 @@ func (p *Pdf) ConvertTo(fileType, subType string, fileBytes []byte) ([]byte, err
 					)
 				}
 			case images.WEBP:
-				err = webp.Encode(imgFile, img, nil)
-				if err != nil {
-					return nil, fmt.Errorf(
-						"ConvertTo: error at encoding the pdf page %d as webp: %w",
-						pageNum,
-						err,
-					)
+				// encode to BMP first
+				buf := new(bytes.Buffer)
+				if err = bmp.Encode(buf, img); err != nil {
+					return nil, err
 				}
+
+				vipsImage, err := vips.NewImageFromBuffer(buf.Bytes())
+				if err != nil {
+					return nil, err
+				}
+				defer vipsImage.Close()
+
+				bytes, _, err := vipsImage.ExportWebp(nil)
+				if err != nil {
+					return nil, err
+				}
+				if _, err = imgFile.Write(bytes); err != nil {
+					return nil, err
+				}
+				//
+				//err = webp.Encode(imgFile, img, nil)
+				//if err != nil {
+				//	return nil, fmt.Errorf(
+				//		"ConvertTo: error at encoding the pdf page %d as webp: %w",
+				//		pageNum,
+				//		err,
+				//	)
+				//}
 			case images.TIFF:
 				err = tiff.Encode(imgFile, img, nil)
 				if err != nil {
@@ -227,7 +247,7 @@ func (p *Pdf) ConvertTo(fileType, subType string, fileBytes []byte) ([]byte, err
 				}
 			}
 
-			imgFile.Close()
+			_ = imgFile.Close()
 
 			// Opens the image to add it to the zip file.
 			imgFile, err = os.Open(tmpImgFileMame)
@@ -260,8 +280,8 @@ func (p *Pdf) ConvertTo(fileType, subType string, fileBytes []byte) ([]byte, err
 		}
 
 		// Closes both zip writer and the zip file after its done with the writing.
-		zipWriter.Close()
-		archive.Close()
+		_ = zipWriter.Close()
+		_ = archive.Close()
 
 		// Reads the zip file as an slice of bytes.
 		zipFile, err := os.ReadFile(zipFileName)
@@ -346,7 +366,7 @@ func (p *Pdf) ConvertTo(fileType, subType string, fileBytes []byte) ([]byte, err
 
 			log.Println(stdout.String())
 
-			tmpDocxFile.Close()
+			_ = tmpDocxFile.Close()
 
 			tmpDocxFile, err = os.Open(tmpDocxFileName)
 			if err != nil {
@@ -385,8 +405,8 @@ func (p *Pdf) ConvertTo(fileType, subType string, fileBytes []byte) ([]byte, err
 			}
 
 			// Closes both zip writer and the zip file after its done with the writing.
-			zipWriter.Close()
-			archive.Close()
+			_ = zipWriter.Close()
+			_ = archive.Close()
 
 			// Reads the zip file as an slice of bytes.
 			zipFile, err := os.ReadFile(zipFileName)

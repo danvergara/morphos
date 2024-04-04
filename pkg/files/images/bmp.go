@@ -64,9 +64,7 @@ func (b *Bmp) SupportedMIMETypes() map[string][]string {
 // ConvertTo method converts a given file to a target format.
 // This method returns a file in form of a slice of bytes.
 // The methd receives a file type and the sub-type of the target format and the file as array of bytes.
-func (b *Bmp) ConvertTo(fileType, subType string, fileBytes []byte) ([]byte, error) {
-	var result []byte
-
+func (b *Bmp) ConvertTo(fileType, subType string, fileBytes []byte) (result []byte, err error) {
 	compatibleFormats, ok := b.SupportedFormats()[fileType]
 	if !ok {
 		return nil, fmt.Errorf("ConvertTo: file type not supported: %s", fileType)
@@ -78,17 +76,9 @@ func (b *Bmp) ConvertTo(fileType, subType string, fileBytes []byte) ([]byte, err
 
 	switch strings.ToLower(fileType) {
 	case imageType:
-		img, err := bmp.Decode(bytes.NewReader(fileBytes))
+		result, err = convertToImage(b.ImageType(), subType, fileBytes)
 		if err != nil {
-			return nil, err
-		}
-
-		result, err = convertToImage(subType, img)
-		if err != nil {
-			return nil, fmt.Errorf(
-				"ConvertTo: error at converting image to another format: %w",
-				err,
-			)
+			err = fmt.Errorf("ConvertTo: error at converting image to another format: %w", err)
 		}
 	case documentType:
 		img, err := bmp.Decode(bytes.NewReader(fileBytes))
@@ -105,7 +95,7 @@ func (b *Bmp) ConvertTo(fileType, subType string, fileBytes []byte) ([]byte, err
 		}
 	}
 
-	return result, nil
+	return
 }
 
 // ImageType returns the file format of the current image.

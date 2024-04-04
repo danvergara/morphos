@@ -65,10 +65,7 @@ func (w *Webp) SupportedMIMETypes() map[string][]string {
 
 // ConvertTo method converts a given file to a target format.
 // This method returns a file in form of a slice of bytes.
-func (w *Webp) ConvertTo(fileType, subType string, fileBytes []byte) ([]byte, error) {
-
-	var result []byte
-
+func (w *Webp) ConvertTo(fileType, subType string, fileBytes []byte) (result []byte, err error) {
 	compatibleFormats, ok := w.SupportedFormats()[fileType]
 	if !ok {
 		return nil, fmt.Errorf("ConvertTo: file type not supported: %s", fileType)
@@ -80,17 +77,9 @@ func (w *Webp) ConvertTo(fileType, subType string, fileBytes []byte) ([]byte, er
 
 	switch strings.ToLower(fileType) {
 	case imageType:
-		img, err := webp.Decode(bytes.NewReader(fileBytes))
+		result, err = convertToImage(w.ImageType(), subType, fileBytes)
 		if err != nil {
-			return nil, err
-		}
-
-		result, err = convertToImage(subType, img)
-		if err != nil {
-			return nil, fmt.Errorf(
-				"ConvertTo: error at converting image to another format: %w",
-				err,
-			)
+			err = fmt.Errorf("ConvertTo: error at converting image to another format: %w", err)
 		}
 	case documentType:
 		img, err := webp.Decode(bytes.NewReader(fileBytes))
@@ -110,7 +99,7 @@ func (w *Webp) ConvertTo(fileType, subType string, fileBytes []byte) ([]byte, er
 		}
 	}
 
-	return result, nil
+	return
 }
 
 // ImageType method returns the file format of the current image.
