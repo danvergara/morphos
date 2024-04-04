@@ -3,6 +3,7 @@ package images
 import (
 	"bytes"
 	"fmt"
+	"io"
 	"slices"
 	"strings"
 
@@ -64,7 +65,7 @@ func (b *Bmp) SupportedMIMETypes() map[string][]string {
 // ConvertTo method converts a given file to a target format.
 // This method returns a file in form of a slice of bytes.
 // The methd receives a file type and the sub-type of the target format and the file as array of bytes.
-func (b *Bmp) ConvertTo(fileType, subType string, fileBytes []byte) ([]byte, error) {
+func (b *Bmp) ConvertTo(fileType, subType string, file io.Reader) (io.Reader, error) {
 	var result []byte
 
 	compatibleFormats, ok := b.SupportedFormats()[fileType]
@@ -78,7 +79,7 @@ func (b *Bmp) ConvertTo(fileType, subType string, fileBytes []byte) ([]byte, err
 
 	switch strings.ToLower(fileType) {
 	case imageType:
-		img, err := bmp.Decode(bytes.NewReader(fileBytes))
+		img, err := bmp.Decode(file)
 		if err != nil {
 			return nil, err
 		}
@@ -91,7 +92,7 @@ func (b *Bmp) ConvertTo(fileType, subType string, fileBytes []byte) ([]byte, err
 			)
 		}
 	case documentType:
-		img, err := bmp.Decode(bytes.NewReader(fileBytes))
+		img, err := bmp.Decode(file)
 		if err != nil {
 			return nil, err
 		}
@@ -105,7 +106,7 @@ func (b *Bmp) ConvertTo(fileType, subType string, fileBytes []byte) ([]byte, err
 		}
 	}
 
-	return result, nil
+	return bytes.NewReader(result), nil
 }
 
 // ImageType returns the file format of the current image.

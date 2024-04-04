@@ -86,7 +86,7 @@ func (p *Pdf) SupportedMIMETypes() map[string][]string {
 // ConvertTo converts the current PDF file to another given format.
 // This method receives the file type, the sub-type and the file as an slice of bytes.
 // Returns the converted file as an slice of bytes, if something wrong happens, an error is returned.
-func (p *Pdf) ConvertTo(fileType, subType string, fileBytes []byte) ([]byte, error) {
+func (p *Pdf) ConvertTo(fileType, subType string, file io.Reader) (io.Reader, error) {
 	// These are guard clauses that check if the target file type is valid.
 	compatibleFormats, ok := p.SupportedFormats()[fileType]
 	if !ok {
@@ -96,6 +96,15 @@ func (p *Pdf) ConvertTo(fileType, subType string, fileBytes []byte) ([]byte, err
 	if !slices.Contains(compatibleFormats, subType) {
 		return nil, fmt.Errorf("ConvertTo: file sub-type not supported: %s", subType)
 	}
+
+	buf := new(bytes.Buffer)
+	if _, err := buf.ReadFrom(file); err != nil {
+		return nil, fmt.Errorf(
+			"error getting the content of the pdf file in form of slice of bytes: %w",
+			err,
+		)
+	}
+	fileBytes := buf.Bytes()
 
 	// If the file type is valid, figures out how to go ahead.
 	switch strings.ToLower(fileType) {
@@ -269,7 +278,7 @@ func (p *Pdf) ConvertTo(fileType, subType string, fileBytes []byte) ([]byte, err
 			return nil, fmt.Errorf("error reading zip file: %v", err)
 		}
 
-		return zipFile, nil
+		return bytes.NewReader(zipFile), nil
 	case documentType:
 		switch subType {
 		case DOCX:
@@ -394,7 +403,7 @@ func (p *Pdf) ConvertTo(fileType, subType string, fileBytes []byte) ([]byte, err
 				return nil, fmt.Errorf("error reading zip file: %v", err)
 			}
 
-			return zipFile, nil
+			return bytes.NewReader(zipFile), nil
 		}
 	}
 

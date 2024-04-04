@@ -6,6 +6,7 @@ import (
 	"image"
 	"image/draw"
 	"image/jpeg"
+	"io"
 	"slices"
 	"strings"
 )
@@ -64,7 +65,7 @@ func (j *Jpeg) SupportedMIMETypes() map[string][]string {
 // ConvertTo method converts a given file to a target format.
 // This method returns a file in form of a slice of bytes.
 // The methd receives a file type and the sub-type of the target format and the file as array of bytes.
-func (j *Jpeg) ConvertTo(fileType, subType string, fileBytes []byte) ([]byte, error) {
+func (j *Jpeg) ConvertTo(fileType, subType string, file io.Reader) (io.Reader, error) {
 	var result []byte
 
 	compatibleFormats, ok := j.SupportedFormats()[fileType]
@@ -78,7 +79,7 @@ func (j *Jpeg) ConvertTo(fileType, subType string, fileBytes []byte) ([]byte, er
 
 	switch strings.ToLower(fileType) {
 	case imageType:
-		img, err := jpeg.Decode(bytes.NewReader(fileBytes))
+		img, err := jpeg.Decode(file)
 		if err != nil {
 			return nil, err
 		}
@@ -91,7 +92,7 @@ func (j *Jpeg) ConvertTo(fileType, subType string, fileBytes []byte) ([]byte, er
 			)
 		}
 	case documentType:
-		img, err := jpeg.Decode(bytes.NewReader(fileBytes))
+		img, err := jpeg.Decode(file)
 		if err != nil {
 			return nil, err
 		}
@@ -108,7 +109,7 @@ func (j *Jpeg) ConvertTo(fileType, subType string, fileBytes []byte) ([]byte, er
 		}
 	}
 
-	return result, nil
+	return bytes.NewReader(result), nil
 }
 
 // ImageType returns the file format of the current image.

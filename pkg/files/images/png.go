@@ -6,6 +6,7 @@ import (
 	"image"
 	"image/draw"
 	"image/png"
+	"io"
 	"slices"
 	"strings"
 )
@@ -64,7 +65,7 @@ func (p *Png) SupportedMIMETypes() map[string][]string {
 
 // ConvertTo method converts a given file to a target format.
 // This method returns a file in form of a slice of bytes.
-func (p *Png) ConvertTo(fileType, subType string, fileBytes []byte) ([]byte, error) {
+func (p *Png) ConvertTo(fileType, subType string, file io.Reader) (io.Reader, error) {
 	var result []byte
 
 	compatibleFormats, ok := p.SupportedFormats()[fileType]
@@ -78,7 +79,7 @@ func (p *Png) ConvertTo(fileType, subType string, fileBytes []byte) ([]byte, err
 
 	switch strings.ToLower(fileType) {
 	case imageType:
-		img, err := png.Decode(bytes.NewReader(fileBytes))
+		img, err := png.Decode(file)
 		if err != nil {
 			return nil, err
 		}
@@ -91,7 +92,7 @@ func (p *Png) ConvertTo(fileType, subType string, fileBytes []byte) ([]byte, err
 			)
 		}
 	case documentType:
-		img, err := png.Decode(bytes.NewReader(fileBytes))
+		img, err := png.Decode(file)
 		if err != nil {
 			return nil, err
 		}
@@ -108,7 +109,7 @@ func (p *Png) ConvertTo(fileType, subType string, fileBytes []byte) ([]byte, err
 		}
 	}
 
-	return result, nil
+	return bytes.NewReader(result), nil
 }
 
 // ImageType returns the file format of the current image.

@@ -1,6 +1,8 @@
 package documents_test
 
 import (
+	"bytes"
+	"io"
 	"os"
 	"testing"
 
@@ -12,7 +14,7 @@ import (
 
 type filer interface {
 	SupportedFormats() map[string][]string
-	ConvertTo(string, string, []byte) ([]byte, error)
+	ConvertTo(string, string, io.Reader) (io.Reader, error)
 }
 
 type documenter interface {
@@ -117,12 +119,17 @@ func TestPDFTConvertTo(t *testing.T) {
 			outoutFile, err := tc.input.documenter.ConvertTo(
 				tc.input.targetFileType,
 				tc.input.targetFormat,
-				inputDoc,
+				bytes.NewReader(inputDoc),
 			)
 
 			require.NoError(t, err)
 
-			detectedFileType = mimetype.Detect(outoutFile)
+			buf := new(bytes.Buffer)
+			_, err = buf.ReadFrom(outoutFile)
+			require.NoError(t, err)
+
+			outoutFileBytes := buf.Bytes()
+			detectedFileType = mimetype.Detect(outoutFileBytes)
 			require.Equal(t, tc.expected.mimetype, detectedFileType.String())
 		})
 	}
@@ -175,12 +182,17 @@ func TestDOCXTConvertTo(t *testing.T) {
 			resultFile, err := tc.input.documenter.ConvertTo(
 				tc.input.targetFileType,
 				tc.input.targetFormat,
-				inputDoc,
+				bytes.NewReader(inputDoc),
 			)
 
 			require.NoError(t, err)
 
-			detectedFileType = mimetype.Detect(resultFile)
+			buf := new(bytes.Buffer)
+			_, err = buf.ReadFrom(resultFile)
+			require.NoError(t, err)
+
+			resultFileBytes := buf.Bytes()
+			detectedFileType = mimetype.Detect(resultFileBytes)
 			require.Equal(t, tc.expected.mimetype, detectedFileType.String())
 		})
 	}

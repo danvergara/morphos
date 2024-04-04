@@ -1,6 +1,8 @@
 package images_test
 
 import (
+	"bytes"
+	"io"
 	"os"
 	"testing"
 
@@ -12,7 +14,7 @@ import (
 
 type filer interface {
 	SupportedFormats() map[string][]string
-	ConvertTo(string, string, []byte) ([]byte, error)
+	ConvertTo(string, string, io.Reader) (io.Reader, error)
 }
 
 type imager interface {
@@ -233,12 +235,18 @@ func TestConvertImage(t *testing.T) {
 			convertedImg, err := tc.input.imager.ConvertTo(
 				tc.input.targetFileType,
 				tc.input.targetFormat,
-				inputImg,
+				bytes.NewReader(inputImg),
 			)
 
 			require.NoError(t, err)
 
-			detectedFileType = mimetype.Detect(convertedImg)
+			buf := new(bytes.Buffer)
+			_, err = buf.ReadFrom(convertedImg)
+			require.NoError(t, err)
+
+			convertedImgBytes := buf.Bytes()
+
+			detectedFileType = mimetype.Detect(convertedImgBytes)
 			require.Equal(t, tc.expected.mimetype, detectedFileType.String())
 			formats := tc.input.imager.SupportedFormats()
 			require.EqualValues(t, tc.expected.supportedFormats, formats)
@@ -409,12 +417,18 @@ func TestConvertImageToDocument(t *testing.T) {
 			convertedImg, err := tc.input.imager.ConvertTo(
 				tc.input.targetFileType,
 				tc.input.targetFormat,
-				inputImg,
+				bytes.NewReader(inputImg),
 			)
 
 			require.NoError(t, err)
+			buf := new(bytes.Buffer)
 
-			detectedFileType = mimetype.Detect(convertedImg)
+			_, err = buf.ReadFrom(convertedImg)
+			require.NoError(t, err)
+
+			convertedImgBytes := buf.Bytes()
+
+			detectedFileType = mimetype.Detect(convertedImgBytes)
 			require.Equal(t, tc.expected.mimetype, detectedFileType.String())
 			formats := tc.input.imager.SupportedFormats()
 			require.EqualValues(t, tc.expected.supportedFormats, formats)

@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"image"
 	"image/draw"
+	"io"
 	"slices"
 	"strings"
 
@@ -65,7 +66,7 @@ func (w *Webp) SupportedMIMETypes() map[string][]string {
 
 // ConvertTo method converts a given file to a target format.
 // This method returns a file in form of a slice of bytes.
-func (w *Webp) ConvertTo(fileType, subType string, fileBytes []byte) ([]byte, error) {
+func (w *Webp) ConvertTo(fileType, subType string, file io.Reader) (io.Reader, error) {
 
 	var result []byte
 
@@ -80,7 +81,7 @@ func (w *Webp) ConvertTo(fileType, subType string, fileBytes []byte) ([]byte, er
 
 	switch strings.ToLower(fileType) {
 	case imageType:
-		img, err := webp.Decode(bytes.NewReader(fileBytes))
+		img, err := webp.Decode(file)
 		if err != nil {
 			return nil, err
 		}
@@ -93,7 +94,7 @@ func (w *Webp) ConvertTo(fileType, subType string, fileBytes []byte) ([]byte, er
 			)
 		}
 	case documentType:
-		img, err := webp.Decode(bytes.NewReader(fileBytes))
+		img, err := webp.Decode(file)
 		if err != nil {
 			return nil, err
 		}
@@ -110,7 +111,7 @@ func (w *Webp) ConvertTo(fileType, subType string, fileBytes []byte) ([]byte, er
 		}
 	}
 
-	return result, nil
+	return bytes.NewReader(result), nil
 }
 
 // ImageType method returns the file format of the current image.

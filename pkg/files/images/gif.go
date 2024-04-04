@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"fmt"
 	"image/gif"
+	"io"
 	"slices"
 	"strings"
 )
@@ -63,7 +64,7 @@ func (g *Gif) SupportedMIMETypes() map[string][]string {
 // ConvertTo method converts a given file to a target format.
 // This method returns a file in form of a slice of bytes.
 // The methd receives a file type and the sub-type of the target format and the file as array of bytes.
-func (g *Gif) ConvertTo(fileType, subType string, fileBytes []byte) ([]byte, error) {
+func (g *Gif) ConvertTo(fileType, subType string, file io.Reader) (io.Reader, error) {
 	var result []byte
 
 	compatibleFormats, ok := g.SupportedFormats()[fileType]
@@ -77,7 +78,7 @@ func (g *Gif) ConvertTo(fileType, subType string, fileBytes []byte) ([]byte, err
 
 	switch strings.ToLower(fileType) {
 	case imageType:
-		img, err := gif.Decode(bytes.NewReader(fileBytes))
+		img, err := gif.Decode(file)
 		if err != nil {
 			return nil, err
 		}
@@ -90,7 +91,7 @@ func (g *Gif) ConvertTo(fileType, subType string, fileBytes []byte) ([]byte, err
 			)
 		}
 	case documentType:
-		img, err := gif.Decode(bytes.NewReader(fileBytes))
+		img, err := gif.Decode(file)
 		if err != nil {
 			return nil, err
 		}
@@ -104,7 +105,7 @@ func (g *Gif) ConvertTo(fileType, subType string, fileBytes []byte) ([]byte, err
 		}
 	}
 
-	return result, nil
+	return bytes.NewReader(result), nil
 }
 
 // ImageType returns the file format of the current image.
