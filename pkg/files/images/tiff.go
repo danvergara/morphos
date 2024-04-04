@@ -63,10 +63,7 @@ func (t *Tiff) SupportedMIMETypes() map[string][]string {
 
 // ConvertTo method converts a given file to a target format.
 // This method returns a file in form of a slice of bytes.
-func (t *Tiff) ConvertTo(fileType, subType string, fileBytes []byte) ([]byte, error) {
-
-	var result []byte
-
+func (t *Tiff) ConvertTo(fileType, subType string, fileBytes []byte) (result []byte, err error) {
 	compatibleFormats, ok := t.SupportedFormats()[fileType]
 	if !ok {
 		return nil, fmt.Errorf("ConvertTo: file type not supported: %s", fileType)
@@ -78,17 +75,9 @@ func (t *Tiff) ConvertTo(fileType, subType string, fileBytes []byte) ([]byte, er
 
 	switch strings.ToLower(fileType) {
 	case imageType:
-		img, err := tiff.Decode(bytes.NewReader(fileBytes))
+		result, err = convertToImage(t.ImageType(), subType, fileBytes)
 		if err != nil {
-			return nil, err
-		}
-
-		result, err = convertToImage(subType, img)
-		if err != nil {
-			return nil, fmt.Errorf(
-				"ConvertTo: error at converting image to another format: %w",
-				err,
-			)
+			err = fmt.Errorf("ConvertTo: error at converting image to another format: %w", err)
 		}
 	case documentType:
 		img, err := tiff.Decode(bytes.NewReader(fileBytes))
@@ -105,7 +94,7 @@ func (t *Tiff) ConvertTo(fileType, subType string, fileBytes []byte) ([]byte, er
 		}
 	}
 
-	return result, nil
+	return
 }
 
 // ImageType returns the file format of the current image.

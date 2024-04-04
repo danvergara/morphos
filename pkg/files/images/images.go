@@ -3,16 +3,17 @@ package images
 import (
 	"bytes"
 	"fmt"
+	"github.com/davidbyttow/govips/v2/vips"
 	"image"
 	"image/gif"
 	"image/jpeg"
 	"image/png"
 	"strings"
 
-	"github.com/chai2010/webp"
 	"github.com/signintech/gopdf"
 	"golang.org/x/image/bmp"
 	"golang.org/x/image/tiff"
+	"golang.org/x/image/webp"
 )
 
 const (
@@ -35,65 +36,33 @@ const (
 	documentType     = "document"
 )
 
-func toPNG(img image.Image) ([]byte, error) {
-	buf := new(bytes.Buffer)
+func toBMP(source string, img []byte) ([]byte, error) {
+	var decodedImage image.Image
+	var err error
 
-	// encode the image as a PNG file.
-	if err := png.Encode(buf, img); err != nil {
+	// decode from source
+	switch source {
+	case PNG:
+		decodedImage, err = png.Decode(bytes.NewReader(img))
+	case JPEG, JPG:
+		decodedImage, err = jpeg.Decode(bytes.NewReader(img))
+	case GIF:
+		decodedImage, err = gif.Decode(bytes.NewReader(img))
+	case WEBP:
+		decodedImage, err = webp.Decode(bytes.NewReader(img))
+	case TIFF:
+		decodedImage, err = tiff.Decode(bytes.NewReader(img))
+	case BMP:
+		decodedImage, err = bmp.Decode(bytes.NewReader(img))
+	}
+	if err != nil {
 		return nil, err
 	}
 
-	return buf.Bytes(), nil
-}
-
-func toGIF(img image.Image) ([]byte, error) {
+	// encode to BMP
 	buf := new(bytes.Buffer)
 
-	// encode the image as a GIF file.
-	if err := gif.Encode(buf, img, nil); err != nil {
-		return nil, err
-	}
-
-	return buf.Bytes(), nil
-}
-
-func toJPG(img image.Image) ([]byte, error) {
-	buf := new(bytes.Buffer)
-
-	// encode the image as a JPEG file.
-	if err := jpeg.Encode(buf, img, nil); err != nil {
-		return nil, err
-	}
-
-	return buf.Bytes(), nil
-}
-
-func toWEBP(img image.Image) ([]byte, error) {
-	buf := new(bytes.Buffer)
-
-	// encode the image as a WEPB file.
-	if err := webp.Encode(buf, img, nil); err != nil {
-		return nil, err
-	}
-
-	return buf.Bytes(), nil
-}
-
-func toTIFF(img image.Image) ([]byte, error) {
-	buf := new(bytes.Buffer)
-
-	// encode the image as a TIFF file.
-	if err := tiff.Encode(buf, img, nil); err != nil {
-		return nil, err
-	}
-
-	return buf.Bytes(), nil
-}
-
-func toBMP(img image.Image) ([]byte, error) {
-	buf := new(bytes.Buffer)
-
-	if err := bmp.Encode(buf, img); err != nil {
+	if err = bmp.Encode(buf, decodedImage); err != nil {
 		return nil, err
 	}
 
@@ -146,46 +115,40 @@ func ParseMimeType(mimetype string) string {
 	return strings.TrimPrefix(mimetype, imageMimeType)
 }
 
-func convertToImage(target string, img image.Image) ([]byte, error) {
-	var err error
-	var result []byte
+func convertToImage(source, target string, img []byte) ([]byte, error) {
+	// special case BMP
+	if target == BMP {
+		return toBMP(source, img)
+	}
+
+	// create vips image
+	vipsImage, err := vips.NewImageFromBuffer(img)
+	if err != nil {
+		return nil, err
+	}
+	defer vipsImage.Close()
+	if err = vipsImage.AutoRotate(); err != nil {
+		return nil, err
+	}
+
+	var data []byte
 
 	switch target {
 	case PNG:
-		result, err = toPNG(img)
-		if err != nil {
-			return nil, err
-		}
+		data, _, err = vipsImage.ExportPng(nil)
 	case JPEG, JPG:
-		result, err = toJPG(img)
-		if err != nil {
-			return nil, err
-		}
+		data, _, err = vipsImage.ExportJpeg(nil)
 	case GIF:
-		result, err = toGIF(img)
-		if err != nil {
-			return nil, err
-		}
+		data, _, err = vipsImage.ExportGIF(nil)
 	case WEBP:
-		result, err = toWEBP(img)
-		if err != nil {
-			return nil, err
-		}
+		data, _, err = vipsImage.ExportWebp(nil)
 	case TIFF:
-		result, err = toTIFF(img)
-		if err != nil {
-			return nil, err
-		}
-	case BMP:
-		result, err = toBMP(img)
-		if err != nil {
-			return nil, err
-		}
+		data, _, err = vipsImage.ExportTiff(nil)
 	default:
 		return nil, fmt.Errorf("file format to convert to not supported: %s", target)
 	}
 
-	return result, nil
+	return data, err
 }
 
 func convertToDocument(target string, img image.Image) ([]byte, error) {

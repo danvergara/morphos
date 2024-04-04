@@ -4,12 +4,14 @@ import (
 	"embed"
 	"errors"
 	"fmt"
+	"github.com/davidbyttow/govips/v2/vips"
 	"html/template"
 	"io"
 	"log"
 	"net/http"
 	"os"
 	"path/filepath"
+	"runtime"
 	"strings"
 
 	"github.com/gabriel-vasile/mimetype"
@@ -301,6 +303,10 @@ func handleModal(w http.ResponseWriter, r *http.Request) error {
 }
 
 func main() {
+	// start vips
+	vips.Startup(&vips.Config{ConcurrencyLevel: runtime.NumCPU()})
+	defer vips.Shutdown()
+
 	port := os.Getenv("MORPHOS_PORT")
 	// default port.
 	if port == "" {
