@@ -136,7 +136,6 @@ func TestPDFTConvertTo(t *testing.T) {
 }
 
 func TestDOCXTConvertTo(t *testing.T) {
-
 	type input struct {
 		filename       string
 		mimetype       string
@@ -153,7 +152,6 @@ func TestDOCXTConvertTo(t *testing.T) {
 		expected expected
 	}{
 		{
-
 			name: "docx to pdf",
 			input: input{
 				filename:       "testdata/file_sample.docx",
@@ -173,6 +171,64 @@ func TestDOCXTConvertTo(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
 
+			inputDoc, err := os.ReadFile(tc.input.filename)
+			require.NoError(t, err)
+
+			detectedFileType := mimetype.Detect(inputDoc)
+			require.Equal(t, tc.input.mimetype, detectedFileType.String())
+
+			resultFile, err := tc.input.documenter.ConvertTo(
+				tc.input.targetFileType,
+				tc.input.targetFormat,
+				bytes.NewReader(inputDoc),
+			)
+
+			require.NoError(t, err)
+
+			buf := new(bytes.Buffer)
+			_, err = buf.ReadFrom(resultFile)
+			require.NoError(t, err)
+
+			resultFileBytes := buf.Bytes()
+			detectedFileType = mimetype.Detect(resultFileBytes)
+			require.Equal(t, tc.expected.mimetype, detectedFileType.String())
+		})
+	}
+}
+
+func TestCSVTConvertTo(t *testing.T) {
+	type input struct {
+		filename       string
+		mimetype       string
+		targetFileType string
+		targetFormat   string
+		documenter     documenter
+	}
+	type expected struct {
+		mimetype string
+	}
+	var tests = []struct {
+		name     string
+		input    input
+		expected expected
+	}{
+		{
+			name: "csv to xlsx",
+			input: input{
+				filename:       "testdata/student.csv",
+				mimetype:       "text/csv",
+				targetFileType: "Document",
+				targetFormat:   "xlsx",
+				documenter:     documents.NewCsv("student.csv"),
+			},
+			expected: expected{
+				mimetype: "application/zip",
+			},
+		},
+	}
+	for _, tc := range tests {
+		tc := tc
+		t.Run(tc.name, func(t *testing.T) {
 			inputDoc, err := os.ReadFile(tc.input.filename)
 			require.NoError(t, err)
 
