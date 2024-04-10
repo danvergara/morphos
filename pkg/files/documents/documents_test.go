@@ -253,3 +253,61 @@ func TestCSVTConvertTo(t *testing.T) {
 		})
 	}
 }
+
+func TestXLSXTConvertTo(t *testing.T) {
+	type input struct {
+		filename       string
+		mimetype       string
+		targetFileType string
+		targetFormat   string
+		documenter     documenter
+	}
+	type expected struct {
+		mimetype string
+	}
+	var tests = []struct {
+		name     string
+		input    input
+		expected expected
+	}{
+		{
+			name: "xlsx to csv",
+			input: input{
+				filename:       "testdata/movies.xlsx",
+				mimetype:       "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+				targetFileType: "Document",
+				targetFormat:   "csv",
+				documenter:     documents.NewXlsx("movies.xlsx"),
+			},
+			expected: expected{
+				mimetype: "application/zip",
+			},
+		},
+	}
+	for _, tc := range tests {
+		tc := tc
+		t.Run(tc.name, func(t *testing.T) {
+			inputDoc, err := os.ReadFile(tc.input.filename)
+			require.NoError(t, err)
+
+			detectedFileType := mimetype.Detect(inputDoc)
+			require.Equal(t, tc.input.mimetype, detectedFileType.String())
+
+			resultFile, err := tc.input.documenter.ConvertTo(
+				tc.input.targetFileType,
+				tc.input.targetFormat,
+				bytes.NewReader(inputDoc),
+			)
+
+			require.NoError(t, err)
+
+			buf := new(bytes.Buffer)
+			_, err = buf.ReadFrom(resultFile)
+			require.NoError(t, err)
+
+			resultFileBytes := buf.Bytes()
+			detectedFileType = mimetype.Detect(resultFileBytes)
+			require.Equal(t, tc.expected.mimetype, detectedFileType.String())
+		})
+	}
+}
