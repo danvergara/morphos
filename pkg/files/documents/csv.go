@@ -20,7 +20,6 @@ type Csv struct {
 	filename            string
 	compatibleFormats   map[string][]string
 	compatibleMIMETypes map[string][]string
-	OutDir              string
 }
 
 // NewCsv returns a pointer to Csv.
