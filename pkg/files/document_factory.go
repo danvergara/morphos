@@ -24,6 +24,10 @@ func (d *DocumentFactory) NewFile(f string) (File, error) {
 		return documents.NewPdf(d.filename), nil
 	case documents.DOCX, documents.DOCXMIMEType:
 		return documents.NewDocx(d.filename), nil
+	case documents.XLSX, documents.XLSXMIMEType:
+		return documents.NewXlsx(d.filename), nil
+	case documents.CSV:
+		return documents.NewCsv(d.filename), nil
 	default:
 		return nil, fmt.Errorf("type file file  %s not recognized", f)
 	}

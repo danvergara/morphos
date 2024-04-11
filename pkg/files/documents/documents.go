@@ -6,6 +6,7 @@ const (
 	PDF          = "pdf"
 	CSV          = "csv"
 	XLSX         = "xlsx"
+	XLSXMIMEType = "vnd.openxmlformats-officedocument.spreadsheetml.sheet"
 
 	imageMimeType = "image/"
 	imageType     = "image"

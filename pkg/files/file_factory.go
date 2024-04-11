@@ -15,6 +15,7 @@ const (
 	// is defined as application, not document. Both are supported.
 	Application = "application"
 	Doc         = "document"
+	Text        = "text"
 )
 
 // BuildFactory is a function responsible to return a FileFactory,
@@ -23,7 +24,7 @@ func BuildFactory(f string, filename string) (FileFactory, error) {
 	switch f {
 	case Img:
 		return new(ImageFactory), nil
-	case Doc, Application:
+	case Doc, Application, Text:
 		return NewDocumentFactory(filename), nil
 	default:
 		return nil, fmt.Errorf("factory with type file %s not recognized", f)
