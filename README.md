@@ -95,10 +95,12 @@ A modal will pop up with a preview of the converted image.
 
 ## Documents X Documents
 
-|      | DOCX | PDF |
-| ---- | ---- | --- |
-| PDF  | ✅   |     |
-| DOCX |      | ✅  |
+|      | DOCX | PDF | XLSX | CSV |
+| ---- | ---- | --- | ---- | --- |
+| PDF  | ✅   |     |      |     |
+| DOCX |      | ✅  |      |     |
+| CSV  |      |     |  ✅  |     |
+| XLSX |      |     |      | ✅  |
 
 ## License
 The MIT License (MIT). See [LICENSE](LICENSE) file for more details.

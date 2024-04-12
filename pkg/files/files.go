@@ -32,5 +32,7 @@ func SupportedFileTypes() map[string]string {
 		"bmp":  "image",
 		"docx": "document",
 		"pdf":  "document",
+		"xlsx": "document",
+		"csv":  "document",
 	}
 }

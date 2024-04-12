@@ -183,7 +183,8 @@ func handleUploadFile(w http.ResponseWriter, r *http.Request) error {
 		return WithHTTPStatus(err, http.StatusInternalServerError)
 	}
 
-	if fileType == "application" {
+	switch fileType {
+	case "application", "text":
 		targetFileSubType = "zip"
 	}
 
