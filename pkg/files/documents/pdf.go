@@ -5,7 +5,6 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
-	"image"
 	"image/gif"
 	"image/jpeg"
 	"image/png"
@@ -18,8 +17,7 @@ import (
 	"strings"
 
 	"github.com/chai2010/webp"
-	"github.com/unidoc/unipdf/v3/model"
-	"github.com/unidoc/unipdf/v3/render"
+	"github.com/gen2brain/go-fitz"
 	"golang.org/x/image/bmp"
 	"golang.org/x/image/tiff"
 
@@ -110,18 +108,9 @@ func (p *Pdf) ConvertTo(fileType, subType string, file io.Reader) (io.Reader, er
 	switch strings.ToLower(fileType) {
 	case imageType:
 		// Creates a PDF Reader based on the pdf file.
-		pdfReader, err := model.NewPdfReader(bytes.NewReader(fileBytes))
+		doc, err := fitz.NewFromMemory(fileBytes)
 		if err != nil {
 			return nil, fmt.Errorf("ConvertTo: error at opening the input pdf: %w", err)
-		}
-
-		// Get the number of pages from the pdf file.
-		pages, err := pdfReader.GetNumPages()
-		if err != nil {
-			return nil, fmt.Errorf(
-				"ConvertTo: error at getting the number of pages from the input pdf: %w",
-				err,
-			)
 		}
 
 		// Parses the file name of the Zip file.
@@ -142,27 +131,23 @@ func (p *Pdf) ConvertTo(fileType, subType string, file io.Reader) (io.Reader, er
 		// Creates a Zip Writer to add files later on.
 		zipWriter := zip.NewWriter(archive)
 
-		device := render.NewImageDevice()
-		// Set the image width. The height will be calculated accordingly.
-		device.OutputWidth = 2048
-
-		for pageNum := 1; pageNum <= pages; pageNum++ {
+		for n := 0; n < doc.NumPage(); n++ {
 			// Parses the file name image.
 			imgFileName := fmt.Sprintf(
 				"%s_%d.%s",
 				strings.TrimSuffix(p.filename, filepath.Ext(p.filename)),
-				pageNum,
+				n,
 				subType,
 			)
 
 			tmpImgFileMame := filepath.Join("/tmp", imgFileName)
 
 			// Converts the current pdf page to an image.Image.
-			img, err := convertPDFPageToImage(pdfReader, device, pageNum)
+			img, err := doc.Image(n)
 			if err != nil {
 				return nil, fmt.Errorf(
 					"ConvertTo: error at converting the pdf page number %d to image: %w",
-					pageNum,
+					n,
 					err,
 				)
 			}
@@ -172,7 +157,7 @@ func (p *Pdf) ConvertTo(fileType, subType string, file io.Reader) (io.Reader, er
 			if err != nil {
 				return nil, fmt.Errorf(
 					"ConvertTo: error at storing the pdf image from the page #%d: %w",
-					pageNum,
+					n,
 					err,
 				)
 			}
@@ -185,7 +170,7 @@ func (p *Pdf) ConvertTo(fileType, subType string, file io.Reader) (io.Reader, er
 				if err != nil {
 					return nil, fmt.Errorf(
 						"ConvertTo: error at encoding the pdf page %d as png: %w",
-						pageNum,
+						n,
 						err,
 					)
 				}
@@ -194,7 +179,7 @@ func (p *Pdf) ConvertTo(fileType, subType string, file io.Reader) (io.Reader, er
 				if err != nil {
 					return nil, fmt.Errorf(
 						"ConvertTo: error at encoding the pdf page %d as jpeg: %w",
-						pageNum,
+						n,
 						err,
 					)
 				}
@@ -203,7 +188,7 @@ func (p *Pdf) ConvertTo(fileType, subType string, file io.Reader) (io.Reader, er
 				if err != nil {
 					return nil, fmt.Errorf(
 						"ConvertTo: error at encoding the pdf page %d as gif: %w",
-						pageNum,
+						n,
 						err,
 					)
 				}
@@ -212,7 +197,7 @@ func (p *Pdf) ConvertTo(fileType, subType string, file io.Reader) (io.Reader, er
 				if err != nil {
 					return nil, fmt.Errorf(
 						"ConvertTo: error at encoding the pdf page %d as webp: %w",
-						pageNum,
+						n,
 						err,
 					)
 				}
@@ -221,7 +206,7 @@ func (p *Pdf) ConvertTo(fileType, subType string, file io.Reader) (io.Reader, er
 				if err != nil {
 					return nil, fmt.Errorf(
 						"ConvertTo: error at encoding the pdf page %d as tiff: %w",
-						pageNum,
+						n,
 						err,
 					)
 				}
@@ -230,7 +215,7 @@ func (p *Pdf) ConvertTo(fileType, subType string, file io.Reader) (io.Reader, er
 				if err != nil {
 					return nil, fmt.Errorf(
 						"ConvertTo: error at encoding the pdf page %d as bmp: %w",
-						pageNum,
+						n,
 						err,
 					)
 				}
@@ -243,7 +228,7 @@ func (p *Pdf) ConvertTo(fileType, subType string, file io.Reader) (io.Reader, er
 			if err != nil {
 				return nil, fmt.Errorf(
 					"ConvertTo: error at storing the pdf image from the page #%d: %w",
-					pageNum,
+					n,
 					err,
 				)
 			}
@@ -254,7 +239,7 @@ func (p *Pdf) ConvertTo(fileType, subType string, file io.Reader) (io.Reader, er
 			if err != nil {
 				return nil, fmt.Errorf(
 					"ConvertTo: error at creating a zip writer to store the page #%d: %w",
-					pageNum,
+					n,
 					err,
 				)
 			}
@@ -262,7 +247,7 @@ func (p *Pdf) ConvertTo(fileType, subType string, file io.Reader) (io.Reader, er
 			if _, err := io.Copy(w1, imgFile); err != nil {
 				return nil, fmt.Errorf(
 					"ConvertTo: error at copying the content of the page #%d to the zipwriter: %w",
-					pageNum,
+					n,
 					err,
 				)
 			}
@@ -408,37 +393,6 @@ func (p *Pdf) ConvertTo(fileType, subType string, file io.Reader) (io.Reader, er
 	}
 
 	return nil, errors.New("not implemented")
-}
-
-// convertPDFPageToImage converts the pdf page to an image.
-// The functions receives the pdf Reader, the Image Device and the page number.
-// Returns a image.Image or an error if something goes wrong.
-func convertPDFPageToImage(
-	pdfReader *model.PdfReader,
-	device *render.ImageDevice,
-	pageNum int,
-) (image.Image, error) {
-	// Get the page based on the given page number.
-	page, err := pdfReader.GetPage(pageNum)
-	if err != nil {
-		return nil, fmt.Errorf(
-			"error at getting a page given a page number %d: %w",
-			pageNum,
-			err,
-		)
-	}
-
-	// Render returns an image.Image given a page.
-	img, err := device.Render(page)
-	if err != nil {
-		return nil, fmt.Errorf(
-			"error at converting the pdf page number %d to image: %w",
-			pageNum,
-			err,
-		)
-	}
-
-	return img, nil
 }
 
 // DocumentType returns the type of ducument of Pdf.
