@@ -1,7 +1,12 @@
 Morphos Server
 ===============
 
-![tests](https://github.com/danvergara/dblab/actions/workflows/test.yaml/badge.svg)
+![tests](https://github.com/danvergara/morphos/actions/workflows/test.yml/badge.svg)
+[![Release](https://img.shields.io/github/release/danvergara/morphos.svg?label=Release)](https://github.com/danvergara/morphos/releases)
+
+<p align="center">
+  <img style="float: right;" src="screenshots/morphos.jpg" alt="morphos logo"/  width=200>
+</p>
 
 __Self-Hosted file converter server.__
 
