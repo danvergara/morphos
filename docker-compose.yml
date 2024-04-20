@@ -1,4 +1,4 @@
-name: mophos
+name: morphos
 services:
     morphos-server:
         ports:
