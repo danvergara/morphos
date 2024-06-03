@@ -1,0 +1,8 @@
+name: morphos
+services:
+    morphos-server:
+        ports:
+            - 8080:8080
+        volumes:
+            - /tmp:/tmp
+        image: ghcr.io/danvergara/morphos-server:latest
