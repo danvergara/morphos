@@ -5,4 +5,37 @@
     });
   </script>
   <script src="/static/bootstrap.min.js"></script>
+  <script>
+    // Shorten the filename if it's too long to fit in the space available
+    htmx.on('htmx:load', function(evt) { updateName(); });
+    htmx.on(window, 'resize', function(evt) { updateName(); });
+
+    function updateName() {
+      let filenameObj = document.getElementById('filename');
+      if (!filenameObj) return; // Not on the download page
+
+      let filename = filenameObj.title;
+
+      let availableWidth = filenameObj.clientWidth;
+
+      // Calculate the width of the text using character width estimates
+      let textWidth = filename.split('').reduce((acc, c) => acc + (c === ' ' ? 5 : 10), 0);
+      
+      if (textWidth > availableWidth) {
+        let i = 0;
+        let width = 60; // Allows space for ellipsis and end of filename including extension
+
+        // Find the last space before the filename would overflow the available width
+        while (i < filename.length && width < availableWidth) {
+          width += filename[i] === ' ' ? 5 : 10;
+          i++;
+        }
+
+        // Shorten the filename and add an ellipsis
+        filename = filename.substr(0, i) + '...' + filename.substr(filename.length-6, filename.length);
+      }
+
+      filenameObj.innerText = filename;
+    }
+  </script>
 {{end}}
