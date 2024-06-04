@@ -6,10 +6,10 @@
   </script>
   <script src="/static/bootstrap.min.js"></script>
   <script>
-    // Shorten the filename if it's too long to fit in the space available
     htmx.on('htmx:load', function(evt) { updateName(); });
     htmx.on(window, 'resize', function(evt) { updateName(); });
 
+    // Shorten the filename if it's too long to fit in the space available
     function updateName() {
       let filenameObj = document.getElementById('filename');
       if (!filenameObj) return; // Not on the download page
