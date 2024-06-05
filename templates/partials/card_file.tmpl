@@ -1,48 +1,42 @@
 {{define "title"}}Download your file{{end}}
 {{define "content"}}
-  <div class="row align-items-center" style="height: 50vh;">
-    <div class="mx-auto col-10 col-md-8 col-lg-8">
-      <div class="card-group">
-        <div class="card text-center">
-          <div class="card-body">
-            <p class="card-text">
+  <div class="row align-items-center text-center" style="height: 50vh;">
+      <div class="mx-auto col-10">
+        <div class="card-group">
+          <div class="card">
+            <div class="card-body" id="filename" title="{{ .Filename }}">
               {{ .Filename }}
-            </p>
+            </div>
           </div>
-        </div>
-        <div class="card text-center">
-          <div class="card-body text-success">
-            <p>
+          <div class="card text-success">
+            <div class="card-body">
               Finished
-            </p>
+            </div>
           </div>
-        </div>
-        <div class="card text-center">
-          <div class="card-body">
-            <input type="hidden" name="filename" value="{{ .Filename }}" id="filename"></input>
-            <input type="hidden" name="filetype" value="{{ .FileType }}" id="filetype"></input>
-            <button hx-get="/modal"
-                    hx-target="#modals-here"
-                    hx-trigger="click"
-                    hx-include="[name='filename'],[name='filetype']"
-                    hx-params="*"
-                    data-bs-toggle="modal"
-                    data-bs-target="#modals-here"
-                    class="btn btn-success">
-              Download
-            </button>
+          <div class="card">
+            <div class="card-body">
+              <input type="hidden" name="filename" value="{{ .Filename }}" id="filename"></input>
+              <input type="hidden" name="filetype" value="{{ .FileType }}" id="filetype"></input>
+              <button hx-get="/modal"
+                      hx-target="#modals-here"
+                      hx-trigger="click"
+                      hx-include="[name='filename'],[name='filetype']"
+                      hx-params="*"
+                      data-bs-toggle="modal"
+                      data-bs-target="#modals-here"
+                      class="btn btn-success">
+                Download
+              </button>
+            </div>
           </div>
-        </div>
-        <div class="card border-light">
-          <div class="card-body">
-            <p class="card-text">
-              <a href='/'>
+          <div class="card">
+            <div class="card-body">
+              <a href="/">
                 <button type="button" class="btn-close" aria-label="Close"></button>
               </a>
-            </p>
+            </div>
           </div>
         </div>
       </div>
     </div>
-  </div>
 {{end}}
