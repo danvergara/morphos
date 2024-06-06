@@ -1,30 +1,33 @@
 {{define "js"}}
+  <script src="/static/bootstrap.min.js"></script>
   <script>
     htmx.on('#form', 'htmx:xhr:progress', function(evt) {
       htmx.find('#progress').setAttribute('value', evt.detail.loaded/evt.detail.total * 100)
     });
-
+  </script>
+  <script>
     // dark mode toggle buutton.
-    document.addEventListener('DOMContentLoaded', (event) => {
+    htmx.on('htmx:load', function(evt) { defaultMode(); });
+    htmx.on('#darkModeSwitch', 'change', function(evt) { darkModeSwitch(); });
+
+    function defaultMode() {
       const htmlElement = document.documentElement;
-      const switchElement = document.getElementById('darkModeSwitch');
-      // Set the default theme to dark if no setting is found in local storage
       const currentTheme = localStorage.getItem('bsTheme') || 'dark';
       htmlElement.setAttribute('data-bs-theme', currentTheme);
-      switchElement.checked = currentTheme === 'dark';
+    }
 
-      switchElement.addEventListener('change', function () {
-        if (this.checked) {
-          htmlElement.setAttribute('data-bs-theme', 'dark');
-          localStorage.setItem('bsTheme', 'dark');
-        } else {
-          htmlElement.setAttribute('data-bs-theme', 'light');
-          localStorage.setItem('bsTheme', 'light');
-        }
-      });
-    });
+    function darkModeSwitch() {
+      let htmlElement = document.documentElement;
+      let switchElement = document.getElementById('darkModeSwitch');
+      if (switchElement.checked) {
+        htmlElement.setAttribute('data-bs-theme', 'dark');
+        localStorage.setItem('bsTheme', 'dark');
+      } else {
+        htmlElement.setAttribute('data-bs-theme', 'light');
+        localStorage.setItem('bsTheme', 'light');
+      }
+    }
   </script>
-  <script src="/static/bootstrap.min.js"></script>
   <script>
     htmx.on('htmx:load', function(evt) { updateName(); });
     htmx.on(window, 'resize', function(evt) { updateName(); });
