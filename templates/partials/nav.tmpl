@@ -1,5 +1,5 @@
 {{define "nav"}}
-  <nav class="navbar bg-dark border-bottom border-body navbar-expand-lg bg-body-tertiary" data-bs-theme="dark">
+  <nav class="navbar border-bottom border-body navbar-expand-lg bg-body-tertiary">
     <div class="container-fluid">
       <a class="navbar-brand" href="#">Morphos Server</a>
       <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
@@ -11,6 +11,10 @@
             <a class="nav-link active" aria-current="page" href="/">Home</a>
           </li>
         </ul>
+        <div class="form-check form-switch ms-auto">
+          <input class="form-check-input" type="checkbox" id="darkModeSwitch" hx-trigger="change" checked>
+          <label class="form-check-label" for="darkModeSwitch">Dark Mode</label>
+        </div>
       </div>
     </div>
   </nav>

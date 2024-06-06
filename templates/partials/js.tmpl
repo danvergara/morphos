@@ -1,10 +1,33 @@
 {{define "js"}}
+  <script src="/static/bootstrap.min.js"></script>
   <script>
     htmx.on('#form', 'htmx:xhr:progress', function(evt) {
       htmx.find('#progress').setAttribute('value', evt.detail.loaded/evt.detail.total * 100)
     });
   </script>
-  <script src="/static/bootstrap.min.js"></script>
+  <script>
+    // dark mode toggle buutton.
+    htmx.on('htmx:load', function(evt) { defaultMode(); });
+    htmx.on('#darkModeSwitch', 'change', function(evt) { darkModeSwitch(); });
+
+    function defaultMode() {
+      const htmlElement = document.documentElement;
+      const currentTheme = localStorage.getItem('bsTheme') || 'dark';
+      htmlElement.setAttribute('data-bs-theme', currentTheme);
+    }
+
+    function darkModeSwitch() {
+      let htmlElement = document.documentElement;
+      let switchElement = document.getElementById('darkModeSwitch');
+      if (switchElement.checked) {
+        htmlElement.setAttribute('data-bs-theme', 'dark');
+        localStorage.setItem('bsTheme', 'dark');
+      } else {
+        htmlElement.setAttribute('data-bs-theme', 'light');
+        localStorage.setItem('bsTheme', 'light');
+      }
+    }
+  </script>
   <script>
     htmx.on('htmx:load', function(evt) { updateName(); });
     htmx.on(window, 'resize', function(evt) { updateName(); });
