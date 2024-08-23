@@ -72,14 +72,15 @@ A modal will pop up with a preview of the converted image.
 
 ### Images X Images
 
-|       |  PNG  |  JPEG  |  GIF  |  WEBP  |  TIFF  |  BMP  |
-|-------|-------|--------|-------|--------|--------|-------|
-|  PNG  |       |   ✅   |  ✅   |   ✅   |   ✅   |  ✅   |
-|  JPEG |  ✅   |        |  ✅   |   ✅   |   ✅   |  ✅   |
-|  GIF  |  ✅   |   ✅   |       |   ✅   |   ✅   |  ✅   |
-|  WEBP |  ✅   |   ✅   |  ✅   |        |   ✅   |  ✅   |
-|  TIFF |  ✅   |   ✅   |  ✅   |   ✅   |        |  ✅   |
-|  BMP  |  ✅   |   ✅   |  ✅   |   ✅   |   ✅   |       |
+|       |  PNG  |  JPEG  |  GIF  |  WEBP  |  TIFF  |  BMP  |  AVIF  |
+|-------|-------|--------|-------|--------|--------|-------|--------|  
+|  PNG  |       |   ✅   |  ✅   |   ✅   |   ✅   |  ✅   |   ✅   |
+|  JPEG |  ✅   |        |  ✅   |   ✅   |   ✅   |  ✅   |   ✅   |  
+|  GIF  |  ✅   |   ✅   |       |   ✅   |   ✅   |  ✅   |   ✅   | 
+|  WEBP |  ✅   |   ✅   |  ✅   |        |   ✅   |  ✅   |   ✅   |
+|  TIFF |  ✅   |   ✅   |  ✅   |   ✅   |        |  ✅   |   ✅   |
+|  BMP  |  ✅   |   ✅   |  ✅   |   ✅   |   ✅   |       |   ✅   |
+|  AVIF |  ✅   |   ✅   |  ✅   |   ✅   |   ✅   |  ✅   |        |
 
 ### Images X Documents
 
@@ -91,12 +92,13 @@ A modal will pop up with a preview of the converted image.
 |  WEBP |  ✅   |
 |  TIFF |  ✅   |
 |  BMP  |  ✅   |
+|  AVIF |       |
 
 ## Documents X Images
 
-|     | PNG | JPEG | GIF | WEBP | TIFF | BMP |
-| --- | --- | ---- | --- | ---- | ---- | --- |
-| PDF | ✅  | ✅   | ✅  | ✅   | ✅   | ✅  |
+|     | PNG | JPEG | GIF | WEBP | TIFF | BMP |  AVIF | 
+| --- | --- | ---- | --- | ---- | ---- | --- | ----  |
+| PDF | ✅  | ✅   | ✅  | ✅   | ✅   | ✅  |       |
 
 ## Documents X Documents
 
