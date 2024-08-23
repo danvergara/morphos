@@ -23,6 +23,7 @@ func NewJpeg() *Jpeg {
 	j := Jpeg{
 		compatibleFormats: map[string][]string{
 			"Image": {
+				AVIF,
 				PNG,
 				GIF,
 				WEBP,
@@ -36,6 +37,7 @@ func NewJpeg() *Jpeg {
 
 		compatibleMIMETypes: map[string][]string{
 			"Image": {
+				AVIF,
 				PNG,
 				GIF,
 				WEBP,
@@ -79,18 +81,12 @@ func (j *Jpeg) ConvertTo(fileType, subType string, file io.Reader) (io.Reader, e
 
 	switch strings.ToLower(fileType) {
 	case imageType:
-		img, err := jpeg.Decode(file)
+		convertedImage, err := convertToImage(subType, file)
 		if err != nil {
 			return nil, err
 		}
 
-		result, err = convertToImage(subType, img)
-		if err != nil {
-			return nil, fmt.Errorf(
-				"ConvertTo: error at converting image to another format: %w",
-				err,
-			)
-		}
+		return convertedImage, nil
 	case documentType:
 		img, err := jpeg.Decode(file)
 		if err != nil {

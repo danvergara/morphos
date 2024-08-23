@@ -40,6 +40,30 @@ func TestConvertImage(t *testing.T) {
 		expected expected
 	}{
 		{
+			name: "avif to jpeg",
+			input: input{
+				filename:       "testdata/fox.avif",
+				mimetype:       "image/avif",
+				targetFileType: "Image",
+				targetFormat:   "jpeg",
+				imager:         images.NewAvif(),
+			},
+			expected: expected{
+				mimetype: "image/jpeg",
+				supportedFormats: map[string][]string{
+					"Image": {
+						images.JPG,
+						images.JPEG,
+						images.PNG,
+						images.GIF,
+						images.WEBP,
+						images.TIFF,
+						images.BMP,
+					},
+				},
+			},
+		},
+		{
 			name: "png to jpeg",
 			input: input{
 				filename:       "testdata/gopher_pirate.png",
@@ -52,6 +76,7 @@ func TestConvertImage(t *testing.T) {
 				mimetype: "image/jpeg",
 				supportedFormats: map[string][]string{
 					"Image": {
+						images.AVIF,
 						images.JPG,
 						images.JPEG,
 						images.GIF,
@@ -78,6 +103,7 @@ func TestConvertImage(t *testing.T) {
 				mimetype: "image/png",
 				supportedFormats: map[string][]string{
 					"Image": {
+						images.AVIF,
 						images.PNG,
 						images.GIF,
 						images.WEBP,
@@ -103,6 +129,7 @@ func TestConvertImage(t *testing.T) {
 				mimetype: "image/png",
 				supportedFormats: map[string][]string{
 					"Image": {
+						images.AVIF,
 						images.JPG,
 						images.JPEG,
 						images.PNG,
@@ -129,6 +156,7 @@ func TestConvertImage(t *testing.T) {
 				mimetype: "image/webp",
 				supportedFormats: map[string][]string{
 					"Image": {
+						images.AVIF,
 						images.JPG,
 						images.JPEG,
 						images.GIF,
@@ -155,6 +183,7 @@ func TestConvertImage(t *testing.T) {
 				mimetype: "image/tiff",
 				supportedFormats: map[string][]string{
 					"Image": {
+						images.AVIF,
 						images.JPG,
 						images.JPEG,
 						images.PNG,
@@ -181,6 +210,7 @@ func TestConvertImage(t *testing.T) {
 				mimetype: "image/png",
 				supportedFormats: map[string][]string{
 					"Image": {
+						images.AVIF,
 						images.JPG,
 						images.JPEG,
 						images.PNG,
@@ -207,6 +237,7 @@ func TestConvertImage(t *testing.T) {
 				mimetype: "image/bmp",
 				supportedFormats: map[string][]string{
 					"Image": {
+						images.AVIF,
 						images.PNG,
 						images.GIF,
 						images.WEBP,
@@ -285,6 +316,7 @@ func TestConvertImageToDocument(t *testing.T) {
 				mimetype: "application/pdf",
 				supportedFormats: map[string][]string{
 					"Image": {
+						images.AVIF,
 						images.JPG,
 						images.JPEG,
 						images.GIF,
@@ -311,6 +343,7 @@ func TestConvertImageToDocument(t *testing.T) {
 				mimetype: "application/pdf",
 				supportedFormats: map[string][]string{
 					"Image": {
+						images.AVIF,
 						images.PNG,
 						images.GIF,
 						images.WEBP,
@@ -336,6 +369,7 @@ func TestConvertImageToDocument(t *testing.T) {
 				mimetype: "application/pdf",
 				supportedFormats: map[string][]string{
 					"Image": {
+						images.AVIF,
 						images.JPG,
 						images.JPEG,
 						images.PNG,
@@ -362,6 +396,7 @@ func TestConvertImageToDocument(t *testing.T) {
 				mimetype: "application/pdf",
 				supportedFormats: map[string][]string{
 					"Image": {
+						images.AVIF,
 						images.JPG,
 						images.JPEG,
 						images.PNG,
@@ -388,6 +423,7 @@ func TestConvertImageToDocument(t *testing.T) {
 				mimetype: "application/pdf",
 				supportedFormats: map[string][]string{
 					"Image": {
+						images.AVIF,
 						images.JPG,
 						images.JPEG,
 						images.PNG,

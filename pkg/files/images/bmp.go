@@ -22,6 +22,7 @@ func NewBmp() *Bmp {
 	b := Bmp{
 		compatibleFormats: map[string][]string{
 			"Image": {
+				AVIF,
 				JPG,
 				JPEG,
 				PNG,
@@ -35,6 +36,7 @@ func NewBmp() *Bmp {
 		},
 		compatibleMIMETypes: map[string][]string{
 			"Image": {
+				AVIF,
 				JPG,
 				JPEG,
 				PNG,
@@ -79,18 +81,12 @@ func (b *Bmp) ConvertTo(fileType, subType string, file io.Reader) (io.Reader, er
 
 	switch strings.ToLower(fileType) {
 	case imageType:
-		img, err := bmp.Decode(file)
+		convertedImage, err := convertToImage(subType, file)
 		if err != nil {
 			return nil, err
 		}
 
-		result, err = convertToImage(subType, img)
-		if err != nil {
-			return nil, fmt.Errorf(
-				"ConvertTo: error at converting image to another format: %w",
-				err,
-			)
-		}
+		return convertedImage, nil
 	case documentType:
 		img, err := bmp.Decode(file)
 		if err != nil {

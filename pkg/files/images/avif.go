@@ -1,75 +1,65 @@
 package images
 
 import (
-	"bytes"
 	"fmt"
-	"image/gif"
 	"io"
 	"slices"
 	"strings"
 )
 
-// Gif struct implements the File and Image interface from the files pkg.
-type Gif struct {
+// Avif struct implements the File and Image interface from the files pkg.
+type Avif struct {
 	compatibleFormats   map[string][]string
 	compatibleMIMETypes map[string][]string
 }
 
-// NewGif returns a pointer to a Gif instance.
-// The Gif object is set with a map with list of supported file formats.
-func NewGif() *Gif {
-	g := Gif{
+// NewAvif returns a pointer to a Avif instance.
+// The Avif object is set with a map with list of supported file formats.
+func NewAvif() *Avif {
+	a := Avif{
 		compatibleFormats: map[string][]string{
 			"Image": {
-				AVIF,
 				JPG,
 				JPEG,
 				PNG,
+				GIF,
 				WEBP,
 				TIFF,
 				BMP,
-			},
-			"Document": {
-				PDF,
 			},
 		},
+
 		compatibleMIMETypes: map[string][]string{
 			"Image": {
-				AVIF,
 				JPG,
 				JPEG,
 				PNG,
+				GIF,
 				WEBP,
 				TIFF,
 				BMP,
-			},
-			"Document": {
-				PDF,
 			},
 		},
 	}
 
-	return &g
+	return &a
 }
 
 // SupportedFormats returns a map with a slice of supported files.
 // Every key of the map represents the kind of a file.
-func (g *Gif) SupportedFormats() map[string][]string {
-	return g.compatibleFormats
+func (a *Avif) SupportedFormats() map[string][]string {
+	return a.compatibleFormats
 }
 
 // SupportedMIMETypes returns a map with a slice of supported MIME types.
-func (g *Gif) SupportedMIMETypes() map[string][]string {
-	return g.compatibleMIMETypes
+func (a *Avif) SupportedMIMETypes() map[string][]string {
+	return a.compatibleMIMETypes
 }
 
 // ConvertTo method converts a given file to a target format.
 // This method returns a file in form of a slice of bytes.
-// The methd receives a file type and the sub-type of the target format and the file as array of bytes.
-func (g *Gif) ConvertTo(fileType, subType string, file io.Reader) (io.Reader, error) {
-	var result []byte
-
-	compatibleFormats, ok := g.SupportedFormats()[fileType]
+func (a *Avif) ConvertTo(fileType, subType string, file io.Reader) (io.Reader, error) {
+	compatibleFormats, ok := a.SupportedFormats()[fileType]
 	if !ok {
 		return nil, fmt.Errorf("ConvertTo: file type not supported: %s", fileType)
 	}
@@ -86,26 +76,13 @@ func (g *Gif) ConvertTo(fileType, subType string, file io.Reader) (io.Reader, er
 		}
 
 		return convertedImage, nil
-	case documentType:
-		img, err := gif.Decode(file)
-		if err != nil {
-			return nil, err
-		}
-
-		result, err = convertToDocument(subType, img)
-		if err != nil {
-			return nil, fmt.Errorf(
-				"ConvertTo: error at converting image to another format: %w",
-				err,
-			)
-		}
+	default:
+		return nil, fmt.Errorf("not supported file type %s", fileType)
 	}
-
-	return bytes.NewReader(result), nil
 }
 
 // ImageType returns the file format of the current image.
 // This method implements the Image interface.
-func (g *Gif) ImageType() string {
-	return GIF
+func (a *Avif) ImageType() string {
+	return AVIF
 }
