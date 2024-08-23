@@ -10,11 +10,11 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@v4
         with:
-          go-version: "1.21"
-      - name: Install libreoffice
+          go-version: "1.23"
+      - name: Install dependencies
         run: |
           sudo apt-get update
-          sudo apt-get -y install libreoffice
+          sudo apt-get -y install libreoffice ffmpeg 
       - name: Install dependencies
         run: go get .
       - name: Test
