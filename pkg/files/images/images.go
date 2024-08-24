@@ -34,6 +34,7 @@ const (
 	documentMimeType = "application/"
 	documentType     = "document"
 
+	// letters is constant that used as a pool of letters to generate a random string.
 	letters = "abcdefghijklmnopqrstuvwxyz" +
 		"ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
 )
@@ -86,6 +87,7 @@ func ParseMimeType(mimetype string) string {
 	return strings.TrimPrefix(mimetype, imageMimeType)
 }
 
+// stringWithCharset returns a random string based a length and a charset.
 func stringWithCharset(length int, charset string) string {
 	b := make([]byte, length)
 	for i := range b {
@@ -94,11 +96,15 @@ func stringWithCharset(length int, charset string) string {
 	return string(b)
 }
 
+// randString returns a random string calling stringWithCharset and using the letters constant.
 func randString(length int) string {
 	return stringWithCharset(length, letters)
 }
 
+// convertToImage retuns an image as io.Reader and error if something goes wrong.
+// It gets the target format as input alongside the image to be converted to that format.
 func convertToImage(target string, file io.Reader) (io.Reader, error) {
+	// Create a buffer meant to store the input file data.
 	buf := new(bytes.Buffer)
 	if _, err := buf.ReadFrom(file); err != nil {
 		return nil, fmt.Errorf(
@@ -107,26 +113,35 @@ func convertToImage(target string, file io.Reader) (io.Reader, error) {
 		)
 	}
 
+	// Get the bytes off the input image.
 	inputReaderBytes := buf.Bytes()
 
+	// Create a temporary empty file where the input image is gonna be stored.
 	tmpInputImage, err := os.CreateTemp("/tmp", fmt.Sprintf("*.%s", target))
 	if err != nil {
 		return nil, fmt.Errorf("error creating temporary image file: %w", err)
 	}
 	defer os.Remove(tmpInputImage.Name())
 
+	// Write the content of the input image into the temporary file.
 	if _, err = tmpInputImage.Write(inputReaderBytes); err != nil {
 		return nil, fmt.Errorf("error writting the input reader to the temporary image file")
 	}
 
 	tmpConvertedFilename := fmt.Sprintf("/tmp/%s.%s", randString(10), target)
 
+	// Convert the input image to the target format.
+	// This is calling the ffmpeg command under the hood.
+	// The reason behind this is that we could avoid using different libraries,
+	// when we can use a use a single tool for multiple things.
 	if err = ffmpeg.Input(tmpInputImage.Name()).
 		Output(tmpConvertedFilename).
 		OverWriteOutput().ErrorToStdOut().Run(); err != nil {
 		return nil, err
 	}
 
+	// Open the converted file to get the bytes out of it,
+	// and then turning them into a io.Reader.
 	cf, err := os.Open(tmpConvertedFilename)
 	if err != nil {
 		return nil, err
