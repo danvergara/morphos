@@ -22,6 +22,7 @@ func NewTiff() *Tiff {
 	t := Tiff{
 		compatibleFormats: map[string][]string{
 			"Image": {
+				AVIF,
 				JPG,
 				JPEG,
 				PNG,
@@ -35,6 +36,7 @@ func NewTiff() *Tiff {
 		},
 		compatibleMIMETypes: map[string][]string{
 			"Image": {
+				AVIF,
 				JPG,
 				JPEG,
 				PNG,
@@ -79,18 +81,12 @@ func (t *Tiff) ConvertTo(fileType, subType string, file io.Reader) (io.Reader, e
 
 	switch strings.ToLower(fileType) {
 	case imageType:
-		img, err := tiff.Decode(file)
+		convertedImage, err := convertToImage(subType, file)
 		if err != nil {
 			return nil, err
 		}
 
-		result, err = convertToImage(subType, img)
-		if err != nil {
-			return nil, fmt.Errorf(
-				"ConvertTo: error at converting image to another format: %w",
-				err,
-			)
-		}
+		return convertedImage, nil
 	case documentType:
 		img, err := tiff.Decode(file)
 		if err != nil {

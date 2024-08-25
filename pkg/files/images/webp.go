@@ -24,6 +24,7 @@ func NewWebp() *Webp {
 	w := Webp{
 		compatibleFormats: map[string][]string{
 			"Image": {
+				AVIF,
 				JPG,
 				JPEG,
 				PNG,
@@ -37,6 +38,7 @@ func NewWebp() *Webp {
 		},
 		compatibleMIMETypes: map[string][]string{
 			"Image": {
+				AVIF,
 				JPG,
 				JPEG,
 				PNG,
@@ -81,18 +83,12 @@ func (w *Webp) ConvertTo(fileType, subType string, file io.Reader) (io.Reader, e
 
 	switch strings.ToLower(fileType) {
 	case imageType:
-		img, err := webp.Decode(file)
+		convertedImage, err := convertToImage(subType, file)
 		if err != nil {
 			return nil, err
 		}
 
-		result, err = convertToImage(subType, img)
-		if err != nil {
-			return nil, fmt.Errorf(
-				"ConvertTo: error at converting image to another format: %w",
-				err,
-			)
-		}
+		return convertedImage, nil
 	case documentType:
 		img, err := webp.Decode(file)
 		if err != nil {

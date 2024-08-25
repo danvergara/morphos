@@ -4,15 +4,14 @@ import (
 	"bytes"
 	"fmt"
 	"image"
-	"image/gif"
-	"image/jpeg"
-	"image/png"
+	"io"
+	"math/rand"
+	"os"
 	"strings"
+	"time"
 
-	"github.com/chai2010/webp"
 	"github.com/signintech/gopdf"
-	"golang.org/x/image/bmp"
-	"golang.org/x/image/tiff"
+	ffmpeg "github.com/u2takey/ffmpeg-go"
 )
 
 const (
@@ -24,6 +23,7 @@ const (
 	WEBP = "webp"
 	TIFF = "tiff"
 	BMP  = "bmp"
+	AVIF = "avif"
 
 	imageMimeType = "image/"
 	imageType     = "image"
@@ -33,72 +33,13 @@ const (
 
 	documentMimeType = "application/"
 	documentType     = "document"
+
+	// letters is constant that used as a pool of letters to generate a random string.
+	letters = "abcdefghijklmnopqrstuvwxyz" +
+		"ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
 )
 
-func toPNG(img image.Image) ([]byte, error) {
-	buf := new(bytes.Buffer)
-
-	// encode the image as a PNG file.
-	if err := png.Encode(buf, img); err != nil {
-		return nil, err
-	}
-
-	return buf.Bytes(), nil
-}
-
-func toGIF(img image.Image) ([]byte, error) {
-	buf := new(bytes.Buffer)
-
-	// encode the image as a GIF file.
-	if err := gif.Encode(buf, img, nil); err != nil {
-		return nil, err
-	}
-
-	return buf.Bytes(), nil
-}
-
-func toJPG(img image.Image) ([]byte, error) {
-	buf := new(bytes.Buffer)
-
-	// encode the image as a JPEG file.
-	if err := jpeg.Encode(buf, img, nil); err != nil {
-		return nil, err
-	}
-
-	return buf.Bytes(), nil
-}
-
-func toWEBP(img image.Image) ([]byte, error) {
-	buf := new(bytes.Buffer)
-
-	// encode the image as a WEPB file.
-	if err := webp.Encode(buf, img, nil); err != nil {
-		return nil, err
-	}
-
-	return buf.Bytes(), nil
-}
-
-func toTIFF(img image.Image) ([]byte, error) {
-	buf := new(bytes.Buffer)
-
-	// encode the image as a TIFF file.
-	if err := tiff.Encode(buf, img, nil); err != nil {
-		return nil, err
-	}
-
-	return buf.Bytes(), nil
-}
-
-func toBMP(img image.Image) ([]byte, error) {
-	buf := new(bytes.Buffer)
-
-	if err := bmp.Encode(buf, img); err != nil {
-		return nil, err
-	}
-
-	return buf.Bytes(), nil
-}
+var seededRand *rand.Rand = rand.New(rand.NewSource(time.Now().UnixNano()))
 
 // toPDF returns pdf file as an slice of bytes.
 // Receives an image.Image as a parameter.
@@ -146,46 +87,73 @@ func ParseMimeType(mimetype string) string {
 	return strings.TrimPrefix(mimetype, imageMimeType)
 }
 
-func convertToImage(target string, img image.Image) ([]byte, error) {
-	var err error
-	var result []byte
+// stringWithCharset returns a random string based a length and a charset.
+func stringWithCharset(length int, charset string) string {
+	b := make([]byte, length)
+	for i := range b {
+		b[i] = charset[seededRand.Intn(len(charset))]
+	}
+	return string(b)
+}
 
-	switch target {
-	case PNG:
-		result, err = toPNG(img)
-		if err != nil {
-			return nil, err
-		}
-	case JPEG, JPG:
-		result, err = toJPG(img)
-		if err != nil {
-			return nil, err
-		}
-	case GIF:
-		result, err = toGIF(img)
-		if err != nil {
-			return nil, err
-		}
-	case WEBP:
-		result, err = toWEBP(img)
-		if err != nil {
-			return nil, err
-		}
-	case TIFF:
-		result, err = toTIFF(img)
-		if err != nil {
-			return nil, err
-		}
-	case BMP:
-		result, err = toBMP(img)
-		if err != nil {
-			return nil, err
-		}
-	default:
-		return nil, fmt.Errorf("file format to convert to not supported: %s", target)
+// randString returns a random string calling stringWithCharset and using the letters constant.
+func randString(length int) string {
+	return stringWithCharset(length, letters)
+}
+
+// convertToImage retuns an image as io.Reader and error if something goes wrong.
+// It gets the target format as input alongside the image to be converted to that format.
+func convertToImage(target string, file io.Reader) (io.Reader, error) {
+	// Create a buffer meant to store the input file data.
+	buf := new(bytes.Buffer)
+	if _, err := buf.ReadFrom(file); err != nil {
+		return nil, fmt.Errorf(
+			"error reading from the image file: %w",
+			err,
+		)
 	}
 
-	return result, nil
+	// Get the bytes off the input image.
+	inputReaderBytes := buf.Bytes()
+
+	// Create a temporary empty file where the input image is gonna be stored.
+	tmpInputImage, err := os.CreateTemp("/tmp", fmt.Sprintf("*.%s", target))
+	if err != nil {
+		return nil, fmt.Errorf("error creating temporary image file: %w", err)
+	}
+	defer os.Remove(tmpInputImage.Name())
+
+	// Write the content of the input image into the temporary file.
+	if _, err = tmpInputImage.Write(inputReaderBytes); err != nil {
+		return nil, fmt.Errorf("error writting the input reader to the temporary image file")
+	}
+
+	tmpConvertedFilename := fmt.Sprintf("/tmp/%s.%s", randString(10), target)
+
+	// Convert the input image to the target format.
+	// This is calling the ffmpeg command under the hood.
+	// The reason behind this is that we could avoid using different libraries,
+	// when we can use a use a single tool for multiple things.
+	if err = ffmpeg.Input(tmpInputImage.Name()).
+		Output(tmpConvertedFilename).
+		OverWriteOutput().ErrorToStdOut().Run(); err != nil {
+		return nil, err
+	}
+
+	// Open the converted file to get the bytes out of it,
+	// and then turning them into a io.Reader.
+	cf, err := os.Open(tmpConvertedFilename)
+	if err != nil {
+		return nil, err
+	}
+	defer os.Remove(cf.Name())
+
+	fileBytes, err := io.ReadAll(cf)
+	if err != nil {
+		return nil, err
+	}
+
+	return bytes.NewReader(fileBytes), nil
 }
 
 func convertToDocument(target string, img image.Image) ([]byte, error) {

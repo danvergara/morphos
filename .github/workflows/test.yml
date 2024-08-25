@@ -10,12 +10,18 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@v4
         with:
-          go-version: "1.21"
-      - name: Install libreoffice
+          go-version: "1.23"
+      - name: Install linux dependencies
         run: |
-          sudo apt-get update
+          sudo apt-get update && sudo apt-get upgrade
           sudo apt-get -y install libreoffice
-      - name: Install dependencies
+      - name: Setup ffmpeg 
+        uses: FedericoCarboni/setup-ffmpeg@v3
+        id: setup-ffmpeg
+        with:
+          ffmpeg-version: 6.1.0
+          github-token: ${{ github.server_url == 'https://github.com' && github.token || '' }}
+      - name: Install Go dependencies
         run: go get .
       - name: Test
         run: go test -v ./...

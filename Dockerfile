@@ -1,5 +1,5 @@
 # Build the application from source
-FROM golang:1.21 AS builder
+FROM golang:1.23 AS builder
 
 ARG TARGETOS
 ARG TARGETARCH
@@ -25,7 +25,7 @@ FROM debian:trixie-slim AS release
 WORKDIR /
 
 RUN apt-get update \
-   && apt-get install -y --no-install-recommends default-jre libreoffice libreoffice-java-common \
+   && apt-get install -y --no-install-recommends default-jre libreoffice libreoffice-java-common ffmpeg \
    && apt-get autoremove -y \
    && apt-get purge -y --auto-remove \
    && rm -rf /var/lib/apt/lists/*
