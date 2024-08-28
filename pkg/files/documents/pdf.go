@@ -117,19 +117,20 @@ func (p Pdf) ConvertTo(fileType, subType string, file io.Reader) (io.Reader, err
 		}
 
 		// Parses the file name of the Zip file.
-		zipFileName := filepath.Join("/tmp", fmt.Sprintf(
+		zipFileName := fmt.Sprintf(
 			"%s.zip",
 			strings.TrimSuffix(p.filename, filepath.Ext(p.filename)),
-		))
+		)
 
 		// Creates the zip file that will be returned.
-		archive, err := os.Create(zipFileName)
+		archive, err := os.CreateTemp("", zipFileName)
 		if err != nil {
 			return nil, fmt.Errorf(
 				"ConvertTo: error at creating the zip file to store the images: %w",
 				err,
 			)
 		}
+		defer os.Remove(archive.Name())
 
 		// Creates a Zip Writer to add files later on.
 		zipWriter := zip.NewWriter(archive)
@@ -143,8 +144,6 @@ func (p Pdf) ConvertTo(fileType, subType string, file io.Reader) (io.Reader, err
 				subType,
 			)
 
-			tmpImgFileMame := filepath.Join("/tmp", imgFileName)
-
 			// Converts the current pdf page to an image.Image.
 			img, err := doc.Image(n)
 			if err != nil {
@@ -156,7 +155,7 @@ func (p Pdf) ConvertTo(fileType, subType string, file io.Reader) (io.Reader, err
 			}
 
 			// Saves the image on disk.
-			imgFile, err := os.Create(tmpImgFileMame)
+			imgFile, err := os.Create(fmt.Sprintf("/tmp/%s", imgFileName))
 			if err != nil {
 				return nil, fmt.Errorf(
 					"ConvertTo: error at storing the pdf image from the page #%d: %w",
@@ -227,7 +226,7 @@ func (p Pdf) ConvertTo(fileType, subType string, file io.Reader) (io.Reader, err
 			imgFile.Close()
 
 			// Opens the image to add it to the zip file.
-			imgFile, err = os.Open(tmpImgFileMame)
+			imgFile, err = os.Open(imgFile.Name())
 			if err != nil {
 				return nil, fmt.Errorf(
 					"ConvertTo: error at storing the pdf image from the page #%d: %w",
@@ -235,10 +234,9 @@ func (p Pdf) ConvertTo(fileType, subType string, file io.Reader) (io.Reader, err
 					err,
 				)
 			}
-			defer imgFile.Close()
 
 			// Adds the image to the zip file.
-			w1, err := zipWriter.Create(imgFileName)
+			w1, err := zipWriter.Create(filepath.Base(imgFile.Name()))
 			if err != nil {
 				return nil, fmt.Errorf(
 					"ConvertTo: error at creating a zip writer to store the page #%d: %w",
@@ -254,6 +252,9 @@ func (p Pdf) ConvertTo(fileType, subType string, file io.Reader) (io.Reader, err
 					err,
 				)
 			}
+
+			imgFile.Close()
+			os.Remove(imgFile.Name())
 		}
 
 		// Closes both zip writer and the zip file after its done with the writing.
@@ -261,7 +262,7 @@ func (p Pdf) ConvertTo(fileType, subType string, file io.Reader) (io.Reader, err
 		archive.Close()
 
 		// Reads the zip file as an slice of bytes.
-		zipFile, err := os.ReadFile(zipFileName)
+		zipFile, err := os.ReadFile(archive.Name())
 		if err != nil {
 			return nil, fmt.Errorf("error reading zip file: %v", err)
 		}
