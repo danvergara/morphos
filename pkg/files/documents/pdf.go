@@ -275,23 +275,18 @@ func (p Pdf) ConvertTo(fileType, subType string, file io.Reader) (io.Reader, err
 				stderr bytes.Buffer
 			)
 
-			pdfFilename := filepath.Join("/tmp", p.filename)
 			docxFileName := fmt.Sprintf(
 				"%s.docx",
 				strings.TrimSuffix(p.filename, filepath.Ext(p.filename)),
 			)
-			tmpDocxFileName := filepath.Join("/tmp", fmt.Sprintf(
-				"%s.docx",
-				strings.TrimSuffix(p.filename, filepath.Ext(p.filename)),
-			))
 
 			// Parses the file name of the Zip file.
-			zipFileName := filepath.Join("/tmp", fmt.Sprintf(
+			zipFileName := fmt.Sprintf(
 				"%s.zip",
 				strings.TrimSuffix(p.filename, filepath.Ext(p.filename)),
-			))
+			)
 
-			pdfFile, err := os.Create(pdfFilename)
+			pdfFile, err := os.CreateTemp("", p.filename)
 			if err != nil {
 				return nil, fmt.Errorf(
 					"error creating file to store the incoming pdf locally %s: %w",
@@ -299,7 +294,7 @@ func (p Pdf) ConvertTo(fileType, subType string, file io.Reader) (io.Reader, err
 					err,
 				)
 			}
-			defer pdfFile.Close()
+			defer os.Remove(pdfFile.Name())
 
 			if _, err := pdfFile.Write(fileBytes); err != nil {
 				return nil, fmt.Errorf(
@@ -309,19 +304,20 @@ func (p Pdf) ConvertTo(fileType, subType string, file io.Reader) (io.Reader, err
 				)
 			}
 
-			tmpDocxFile, err := os.Create(tmpDocxFileName)
+			tmpDocxFile, err := os.CreateTemp("", docxFileName)
 			if err != nil {
 				return nil, fmt.Errorf(
 					"error at creating the temporary docx file to store the docx content: %w",
 					err,
 				)
 			}
+			defer os.Remove(tmpDocxFile.Name())
 
 			cmdStr := "libreoffice --headless --infilter='writer_pdf_import' --convert-to %s --outdir %s %q"
 			cmd := exec.Command(
 				"bash",
 				"-c",
-				fmt.Sprintf(cmdStr, `docx:"MS Word 2007 XML"`, "/tmp", pdfFilename),
+				fmt.Sprintf(cmdStr, `docx:"MS Word 2007 XML"`, "/tmp", pdfFile.Name()),
 			)
 
 			cmd.Stdout = &stdout
@@ -345,7 +341,7 @@ func (p Pdf) ConvertTo(fileType, subType string, file io.Reader) (io.Reader, err
 
 			tmpDocxFile.Close()
 
-			tmpDocxFile, err = os.Open(tmpDocxFileName)
+			tmpDocxFile, err = os.Open(tmpDocxFile.Name())
 			if err != nil {
 				return nil, fmt.Errorf(
 					"error at opening the docx file: %w",
@@ -355,13 +351,14 @@ func (p Pdf) ConvertTo(fileType, subType string, file io.Reader) (io.Reader, err
 			defer tmpDocxFile.Close()
 
 			// Creates the zip file that will be returned.
-			archive, err := os.Create(zipFileName)
+			archive, err := os.CreateTemp("", zipFileName)
 			if err != nil {
 				return nil, fmt.Errorf(
 					"error at creating the zip file to store the docx file: %w",
 					err,
 				)
 			}
+			defer os.Remove(archive.Name())
 
 			// Creates a Zip Writer to add files later on.
 			zipWriter := zip.NewWriter(archive)
@@ -386,7 +383,7 @@ func (p Pdf) ConvertTo(fileType, subType string, file io.Reader) (io.Reader, err
 			archive.Close()
 
 			// Reads the zip file as an slice of bytes.
-			zipFile, err := os.ReadFile(zipFileName)
+			zipFile, err := os.ReadFile(archive.Name())
 			if err != nil {
 				return nil, fmt.Errorf("error reading zip file: %v", err)
 			}
