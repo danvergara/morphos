@@ -39,6 +39,19 @@ func TestPDFTConvertTo(t *testing.T) {
 		expected expected
 	}{
 		{
+			name: "pdf to epub",
+			input: input{
+				filename:       "testdata/bitcoin.pdf",
+				mimetype:       "application/pdf",
+				targetFileType: "Document",
+				targetFormat:   "epub",
+				documenter:     documents.NewPdf("bitcoin.pdf"),
+			},
+			expected: expected{
+				mimetype: "application/epub+zip",
+			},
+		},
+		{
 			name: "pdf to jpeg",
 			input: input{
 				filename:       "testdata/bitcoin.pdf",

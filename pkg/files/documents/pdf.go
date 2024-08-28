@@ -2,6 +2,7 @@ package documents
 
 import (
 	"archive/zip"
+	"bufio"
 	"bytes"
 	"errors"
 	"fmt"
@@ -33,7 +34,7 @@ type Pdf struct {
 }
 
 // NewPdf returns a pointer to Pdf.
-func NewPdf(filename string) *Pdf {
+func NewPdf(filename string) Pdf {
 	p := Pdf{
 		filename: filename,
 		compatibleFormats: map[string][]string{
@@ -48,6 +49,7 @@ func NewPdf(filename string) *Pdf {
 			},
 			"Document": {
 				DOCX,
+				EPUB,
 			},
 		},
 		compatibleMIMETypes: map[string][]string{
@@ -62,29 +64,30 @@ func NewPdf(filename string) *Pdf {
 			},
 			"Document": {
 				DOCXMIMEType,
+				EpubMimeType,
 			},
 		},
 	}
 
-	return &p
+	return p
 }
 
 // SupportedFormats returns a map witht the compatible formats that Pdf is
 // compatible to be converted to.
-func (p *Pdf) SupportedFormats() map[string][]string {
+func (p Pdf) SupportedFormats() map[string][]string {
 	return p.compatibleFormats
 }
 
 // SupportedMIMETypes returns a map witht the compatible MIME types that Pdf is
 // compatible to be converted to.
-func (p *Pdf) SupportedMIMETypes() map[string][]string {
+func (p Pdf) SupportedMIMETypes() map[string][]string {
 	return p.compatibleMIMETypes
 }
 
 // ConvertTo converts the current PDF file to another given format.
 // This method receives the file type, the sub-type and the file as an slice of bytes.
 // Returns the converted file as an slice of bytes, if something wrong happens, an error is returned.
-func (p *Pdf) ConvertTo(fileType, subType string, file io.Reader) (io.Reader, error) {
+func (p Pdf) ConvertTo(fileType, subType string, file io.Reader) (io.Reader, error) {
 	// These are guard clauses that check if the target file type is valid.
 	compatibleFormats, ok := p.SupportedFormats()[fileType]
 	if !ok {
@@ -389,6 +392,87 @@ func (p *Pdf) ConvertTo(fileType, subType string, file io.Reader) (io.Reader, er
 			}
 
 			return bytes.NewReader(zipFile), nil
+		case EPUB:
+			// Create a temporary empty file where the input pdf is gonna be stored.
+			tmpInputPDF, err := os.CreateTemp("", fmt.Sprintf("*.%s", PDF))
+			if err != nil {
+				return nil, fmt.Errorf("error creating temporary pdf file: %w", err)
+			}
+			defer os.Remove(tmpInputPDF.Name())
+
+			// Write the content of the input pdf into the temporary file.
+			if _, err = tmpInputPDF.Write(fileBytes); err != nil {
+				return nil, fmt.Errorf(
+					"error writting the input reader to the temporary pdf file",
+				)
+			}
+
+			if err := tmpInputPDF.Close(); err != nil {
+				return nil, err
+			}
+
+			log.Printf("pdf file path: %s", tmpInputPDF.Name())
+			epubName := fmt.Sprintf(
+				"%s.epub",
+				strings.TrimSuffix(tmpInputPDF.Name(), filepath.Ext(tmpInputPDF.Name())),
+			)
+			log.Printf("epub file path: %s", epubName)
+
+			cmd := exec.Command("ebook-convert", tmpInputPDF.Name(), epubName)
+
+			// Capture stdout
+			stdout, err := cmd.StdoutPipe()
+			if err != nil {
+				return nil, err
+			}
+
+			// Capture stderr
+			stderr, err := cmd.StderrPipe()
+			if err != nil {
+				return nil, err
+			}
+
+			// Start the command
+			if err := cmd.Start(); err != nil {
+				return nil, err
+			}
+			// Create readers to read stdout and stderr
+			stdoutScanner := bufio.NewScanner(stdout)
+			stderrScanner := bufio.NewScanner(stderr)
+
+			// Read stdout line by line
+			go func() {
+				for stdoutScanner.Scan() {
+					log.Println("STDOUT:", stdoutScanner.Text())
+				}
+			}()
+
+			// Read stderr line by line
+			go func() {
+				for stderrScanner.Scan() {
+					log.Println("STDERR:", stderrScanner.Text())
+				}
+			}()
+
+			// Wait for the command to finish
+			if err := cmd.Wait(); err != nil {
+				return nil, err
+			}
+
+			// Open the converted file to get the bytes out of it,
+			// and then turning them into a io.Reader.
+			cf, err := os.Open(epubName)
+			if err != nil {
+				return nil, err
+			}
+			// defer os.Remove(cf.Name())
+
+			fileBytes, err := io.ReadAll(cf)
+			if err != nil {
+				return nil, err
+			}
+
+			return bytes.NewReader(fileBytes), nil
 		}
 	}
 
@@ -396,6 +480,6 @@ func (p *Pdf) ConvertTo(fileType, subType string, file io.Reader) (io.Reader, er
 }
 
 // DocumentType returns the type of ducument of Pdf.
-func (p *Pdf) DocumentType() string {
+func (p Pdf) DocumentType() string {
 	return PDF
 }

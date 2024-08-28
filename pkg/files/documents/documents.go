@@ -8,6 +8,9 @@ const (
 	XLSX         = "xlsx"
 	XLSXMIMEType = "vnd.openxmlformats-officedocument.spreadsheetml.sheet"
 
+	EpubMimeType = "epub+zip"
+	EPUB         = "epub"
+
 	imageMimeType = "image/"
 	imageType     = "image"
 
