@@ -14,7 +14,7 @@ jobs:
       - name: Install linux dependencies
         run: |
           sudo apt-get update && sudo apt-get upgrade
-          sudo apt-get -y install libreoffice
+          sudo apt-get -y install libreoffice calibre
       - name: Setup ffmpeg 
         uses: FedericoCarboni/setup-ffmpeg@v3
         id: setup-ffmpeg
