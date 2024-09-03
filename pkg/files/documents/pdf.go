@@ -49,6 +49,8 @@ func NewPdf(filename string) Pdf {
 			},
 			"Document": {
 				DOCX,
+			},
+			"Ebook": {
 				EPUB,
 			},
 		},
@@ -64,6 +66,9 @@ func NewPdf(filename string) Pdf {
 			},
 			"Document": {
 				DOCXMIMEType,
+				EpubMimeType,
+			},
+			"Ebook": {
 				EpubMimeType,
 			},
 		},
@@ -390,9 +395,18 @@ func (p Pdf) ConvertTo(fileType, subType string, file io.Reader) (io.Reader, err
 			}
 
 			return bytes.NewReader(zipFile), nil
+		}
+	case ebookType:
+		switch subType {
 		case EPUB:
 			// Create a temporary empty file where the input pdf is gonna be stored.
-			tmpInputPDF, err := os.CreateTemp("", fmt.Sprintf("*.%s", PDF))
+			tmpInputPDF, err := os.Create(
+				fmt.Sprintf(
+					"/tmp/%s.%s",
+					strings.TrimSuffix(p.filename, filepath.Ext(p.filename)),
+					PDF,
+				),
+			)
 			if err != nil {
 				return nil, fmt.Errorf("error creating temporary pdf file: %w", err)
 			}
@@ -409,50 +423,48 @@ func (p Pdf) ConvertTo(fileType, subType string, file io.Reader) (io.Reader, err
 				return nil, err
 			}
 
-			log.Printf("pdf file path: %s", tmpInputPDF.Name())
 			epubName := fmt.Sprintf(
 				"%s.epub",
 				strings.TrimSuffix(tmpInputPDF.Name(), filepath.Ext(tmpInputPDF.Name())),
 			)
-			log.Printf("epub file path: %s", epubName)
 
 			cmd := exec.Command("ebook-convert", tmpInputPDF.Name(), epubName)
 
-			// Capture stdout
+			// Capture stdout.
 			stdout, err := cmd.StdoutPipe()
 			if err != nil {
 				return nil, err
 			}
 
-			// Capture stderr
+			// Capture stderr.
 			stderr, err := cmd.StderrPipe()
 			if err != nil {
 				return nil, err
 			}
 
-			// Start the command
+			// Start the command.
 			if err := cmd.Start(); err != nil {
 				return nil, err
 			}
-			// Create readers to read stdout and stderr
+			// Create readers to read stdout and stderr.
 			stdoutScanner := bufio.NewScanner(stdout)
 			stderrScanner := bufio.NewScanner(stderr)
 
-			// Read stdout line by line
+			// Read stdout line by line.
 			go func() {
 				for stdoutScanner.Scan() {
 					log.Println("STDOUT:", stdoutScanner.Text())
 				}
 			}()
 
-			// Read stderr line by line
+			// Read stderr line by line.
 			go func() {
 				for stderrScanner.Scan() {
 					log.Println("STDERR:", stderrScanner.Text())
 				}
 			}()
 
-			// Wait for the command to finish
+			// Wait for the command to finish.
 			if err := cmd.Wait(); err != nil {
 				return nil, err
 			}
@@ -463,14 +475,61 @@ func (p Pdf) ConvertTo(fileType, subType string, file io.Reader) (io.Reader, err
 			if err != nil {
 				return nil, err
 			}
-			// defer os.Remove(cf.Name())
+			defer os.Remove(cf.Name())
 
-			fileBytes, err := io.ReadAll(cf)
+			// Parse the file name of the Zip file.
+			zipFileName := fmt.Sprintf(
+				"%s.zip",
+				strings.TrimSuffix(p.filename, filepath.Ext(p.filename)),
+			)
+
+			// Parse the output file name.
+			outputEpubFilename := fmt.Sprintf(
+				"%s.%s",
+				strings.TrimSuffix(p.filename, filepath.Ext(p.filename)),
+				EPUB,
+			)
+
+			// Creates the zip file that will be returned.
+			archive, err := os.CreateTemp("", zipFileName)
 			if err != nil {
-				return nil, err
+				return nil, fmt.Errorf(
+					"error at creating the zip file to store the pdf file: %w",
+					err,
+				)
+			}
+			defer os.Remove(archive.Name())
+
+			// Creates a Zip Writer to add files later on.
+			zipWriter := zip.NewWriter(archive)
+
+			// Adds the image to the zip file.
+			w1, err := zipWriter.Create(outputEpubFilename)
+			if err != nil {
+				return nil, fmt.Errorf(
+					"error creating the zip writer: %w",
+					err,
+				)
 			}
 
-			return bytes.NewReader(fileBytes), nil
+			if _, err := io.Copy(w1, cf); err != nil {
+				return nil, fmt.Errorf(
+					"error at writing the docx file content to the zip writer: %w",
+					err,
+				)
+			}
+
+			// Closes both zip writer and the zip file after its done with the writing.
+			zipWriter.Close()
+			archive.Close()
+
+			// Reads the zip file as an slice of bytes.
+			zipFile, err := os.ReadFile(archive.Name())
+			if err != nil {
+				return nil, fmt.Errorf("error reading zip file: %v", err)
+			}
+
+			return bytes.NewReader(zipFile), nil
 		}
 	}
 

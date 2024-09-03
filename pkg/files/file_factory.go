@@ -16,6 +16,7 @@ const (
 	Application = "application"
 	Doc         = "document"
 	Text        = "text"
+	Ebook       = "ebook"
 )
 
 // BuildFactory is a function responsible to return a FileFactory,

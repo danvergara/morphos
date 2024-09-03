@@ -17,4 +17,6 @@ const (
 	documentMimeType = "application/"
 	tesxtMimeType    = "text/"
 	documentType     = "document"
+
+	ebookType = "ebook"
 )
