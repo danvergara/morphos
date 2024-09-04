@@ -35,5 +35,6 @@ func SupportedFileTypes() map[string]string {
 		"xlsx": "document",
 		"csv":  "document",
 		"epub": "ebook",
+		"mobi": "ebook",
 	}
 }

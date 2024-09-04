@@ -37,14 +37,26 @@ func TestEbookTConvertTo(t *testing.T) {
 		input    input
 		expected expected
 	}{
-
 		{
-			name: "pdf to epub",
+			name: "epub to pdf",
 			input: input{
 				filename:       "testdata/no-man-s-land.epub",
 				mimetype:       "application/epub+zip",
 				targetFileType: "Document",
 				targetFormat:   "pdf",
+				ebook:          NewEpub("no-man-s-land.epub"),
+			},
+			expected: expected{
+				mimetype: "application/zip",
+			},
+		},
+		{
+			name: "epub to mobi",
+			input: input{
+				filename:       "testdata/no-man-s-land.epub",
+				mimetype:       "application/epub+zip",
+				targetFileType: "Ebook",
+				targetFormat:   "mobi",
 				ebook:          NewEpub("no-man-s-land.epub"),
 			},
 			expected: expected{
