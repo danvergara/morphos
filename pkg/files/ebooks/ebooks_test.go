@@ -63,6 +63,19 @@ func TestEbookTConvertTo(t *testing.T) {
 				mimetype: "application/zip",
 			},
 		},
+		{
+			name: "mobi to epub",
+			input: input{
+				filename:       "testdata/basilleja.mobi",
+				mimetype:       "application/x-mobipocket-ebook",
+				targetFileType: "Ebook",
+				targetFormat:   "epub",
+				ebook:          NewMobi("basilleja.mobi"),
+			},
+			expected: expected{
+				mimetype: "application/zip",
+			},
+		},
 	}
 	for _, tc := range tests {
 		tc := tc
