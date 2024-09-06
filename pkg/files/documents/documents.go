@@ -11,6 +11,9 @@ const (
 	EpubMimeType = "epub+zip"
 	EPUB         = "epub"
 
+	MOBI         = "mobi"
+	MobiMimeType = "x-mobipocket-ebook"
+
 	imageMimeType = "image/"
 	imageType     = "image"
 

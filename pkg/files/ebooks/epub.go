@@ -40,7 +40,7 @@ func NewEpub(filename string) Epub {
 				documents.PDF,
 			},
 			"Ebook": {
-				MOBI,
+				MobiMimeType,
 			},
 		},
 	}
