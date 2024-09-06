@@ -1,20 +1,15 @@
 package ebooks
 
 import (
-	"archive/zip"
-	"bufio"
 	"bytes"
 	"errors"
 	"fmt"
 	"io"
-	"log"
-	"os"
-	"os/exec"
-	"path/filepath"
 	"slices"
 	"strings"
 
 	"github.com/danvergara/morphos/pkg/files/documents"
+	"github.com/danvergara/morphos/pkg/util"
 )
 
 type Mobi struct {
@@ -84,262 +79,12 @@ func (m Mobi) ConvertTo(fileType, subtype string, file io.Reader) (io.Reader, er
 	case documentType:
 		switch subtype {
 		case PDF:
-			// Create a temporary empty file where the input is gonna be stored.
-			tmpInputMobi, err := os.CreateTemp("", fmt.Sprintf("*.%s", MOBI))
-			if err != nil {
-				return nil, fmt.Errorf("error creating temporary mobi file: %w", err)
-			}
-			defer os.Remove(tmpInputMobi.Name())
-
-			// Write the content of the input pdf into the temporary file.
-			if _, err = tmpInputMobi.Write(fileBytes); err != nil {
-				return nil, fmt.Errorf(
-					"error writting the input reader to the temporary mobi file",
-				)
-			}
-
-			if err := tmpInputMobi.Close(); err != nil {
-				return nil, err
-			}
-
-			pdfFileName := fmt.Sprintf(
-				"%s.%s",
-				strings.TrimSuffix(tmpInputMobi.Name(), filepath.Ext(tmpInputMobi.Name())),
-				PDF,
-			)
-
-			// Parses the file name of the Zip file.
-			zipFileName := fmt.Sprintf(
-				"%s.zip",
-				strings.TrimSuffix(m.filename, filepath.Ext(m.filename)),
-			)
-
-			// Parse the output file name.
-			outputPdfFilename := fmt.Sprintf(
-				"%s.%s",
-				strings.TrimSuffix(m.filename, filepath.Ext(m.filename)),
-				PDF,
-			)
-
-			cmd := exec.Command("ebook-convert", tmpInputMobi.Name(), pdfFileName)
-
-			// Capture stdout.
-			stdout, err := cmd.StdoutPipe()
-			if err != nil {
-				return nil, err
-			}
-
-			// Capture stderr.
-			stderr, err := cmd.StderrPipe()
-			if err != nil {
-				return nil, err
-			}
-
-			// Start the command.
-			if err := cmd.Start(); err != nil {
-				return nil, err
-			}
-			// Create readers to read stdout and stderr.
-			stdoutScanner := bufio.NewScanner(stdout)
-			stderrScanner := bufio.NewScanner(stderr)
-
-			// Read stdout line by line.
-			go func() {
-				for stdoutScanner.Scan() {
-					log.Println("STDOUT:", stdoutScanner.Text())
-				}
-			}()
-
-			// Read stderr line by line.
-			go func() {
-				for stderrScanner.Scan() {
-					log.Println("STDERR:", stderrScanner.Text())
-				}
-			}()
-
-			// Wait for the command to finish.
-			if err := cmd.Wait(); err != nil {
-				return nil, err
-			}
-
-			// Open the converted file to get the bytes out of it,
-			// and then turning them into a io.Reader.
-			cf, err := os.Open(pdfFileName)
-			if err != nil {
-				return nil, err
-			}
-			defer os.Remove(cf.Name())
-
-			// Creates the zip file that will be returned.
-			archive, err := os.CreateTemp("", zipFileName)
-			if err != nil {
-				return nil, fmt.Errorf(
-					"error at creating the zip file to store the epub file: %w",
-					err,
-				)
-			}
-			defer os.Remove(archive.Name())
-
-			// Creates a Zip Writer to add files later on.
-			zipWriter := zip.NewWriter(archive)
-
-			// Adds the image to the zip file.
-			w1, err := zipWriter.Create(outputPdfFilename)
-			if err != nil {
-				return nil, fmt.Errorf(
-					"error creating the zip writer: %w",
-					err,
-				)
-			}
-
-			if _, err := io.Copy(w1, cf); err != nil {
-				return nil, fmt.Errorf(
-					"error at writing the pdf file content to the zip writer: %w",
-					err,
-				)
-			}
-
-			// Closes both zip writer and the zip file after its done with the writing.
-			zipWriter.Close()
-			archive.Close()
-
-			// Reads the zip file as an slice of bytes.
-			zipFile, err := os.ReadFile(archive.Name())
-			if err != nil {
-				return nil, fmt.Errorf("error reading zip file: %v", err)
-			}
-
-			return bytes.NewReader(zipFile), nil
+			return util.EbookConvert(m.filename, MOBI, PDF, fileBytes)
 		}
 	case ebookType:
 		switch subtype {
 		case EPUB:
-			// Create a temporary empty file where the input is gonna be stored.
-			tmpInputMobi, err := os.CreateTemp("", fmt.Sprintf("*.%s", MOBI))
-			if err != nil {
-				return nil, fmt.Errorf("error creating temporary mobi file: %w", err)
-			}
-			defer os.Remove(tmpInputMobi.Name())
-
-			// Write the content of the input pdf into the temporary file.
-			if _, err = tmpInputMobi.Write(fileBytes); err != nil {
-				return nil, fmt.Errorf(
-					"error writting the input reader to the temporary mobi file",
-				)
-			}
-
-			if err := tmpInputMobi.Close(); err != nil {
-				return nil, err
-			}
-
-			epubFileName := fmt.Sprintf(
-				"%s.%s",
-				strings.TrimSuffix(tmpInputMobi.Name(), filepath.Ext(tmpInputMobi.Name())),
-				EPUB,
-			)
-
-			// Parses the file name of the Zip file.
-			zipFileName := fmt.Sprintf(
-				"%s.zip",
-				strings.TrimSuffix(m.filename, filepath.Ext(m.filename)),
-			)
-
-			// Parse the output file name.
-			outputEpubFilename := fmt.Sprintf(
-				"%s.%s",
-				strings.TrimSuffix(m.filename, filepath.Ext(m.filename)),
-				EPUB,
-			)
-
-			cmd := exec.Command("ebook-convert", tmpInputMobi.Name(), epubFileName)
-
-			// Capture stdout.
-			stdout, err := cmd.StdoutPipe()
-			if err != nil {
-				return nil, err
-			}
-
-			// Capture stderr.
-			stderr, err := cmd.StderrPipe()
-			if err != nil {
-				return nil, err
-			}
-
-			// Start the command.
-			if err := cmd.Start(); err != nil {
-				return nil, err
-			}
-			// Create readers to read stdout and stderr.
-			stdoutScanner := bufio.NewScanner(stdout)
-			stderrScanner := bufio.NewScanner(stderr)
-
-			// Read stdout line by line.
-			go func() {
-				for stdoutScanner.Scan() {
-					log.Println("STDOUT:", stdoutScanner.Text())
-				}
-			}()
-
-			// Read stderr line by line.
-			go func() {
-				for stderrScanner.Scan() {
-					log.Println("STDERR:", stderrScanner.Text())
-				}
-			}()
-
-			// Wait for the command to finish.
-			if err := cmd.Wait(); err != nil {
-				return nil, err
-			}
-
-			// Open the converted file to get the bytes out of it,
-			// and then turning them into a io.Reader.
-			cf, err := os.Open(epubFileName)
-			if err != nil {
-				return nil, err
-			}
-			defer os.Remove(cf.Name())
-
-			// Creates the zip file that will be returned.
-			archive, err := os.CreateTemp("", zipFileName)
-			if err != nil {
-				return nil, fmt.Errorf(
-					"error at creating the zip file to store the epub file: %w",
-					err,
-				)
-			}
-			defer os.Remove(archive.Name())
-
-			// Creates a Zip Writer to add files later on.
-			zipWriter := zip.NewWriter(archive)
-
-			// Adds the image to the zip file.
-			w1, err := zipWriter.Create(outputEpubFilename)
-			if err != nil {
-				return nil, fmt.Errorf(
-					"error creating the zip writer: %w",
-					err,
-				)
-			}
-
-			if _, err := io.Copy(w1, cf); err != nil {
-				return nil, fmt.Errorf(
-					"error at writing the epub file content to the zip writer: %w",
-					err,
-				)
-			}
-
-			// Closes both zip writer and the zip file after its done with the writing.
-			zipWriter.Close()
-			archive.Close()
-
-			// Reads the zip file as an slice of bytes.
-			zipFile, err := os.ReadFile(archive.Name())
-			if err != nil {
-				return nil, fmt.Errorf("error reading zip file: %v", err)
-			}
-
-			return bytes.NewReader(zipFile), nil
+			return util.EbookConvert(m.filename, MOBI, EPUB, fileBytes)
 		}
 	}
 
