@@ -82,7 +82,9 @@ func (c *Csv) ConvertTo(fileType, subType string, file io.Reader) (io.Reader, er
 
 			reader := csv.NewReader(file)
 			xlsxFile := xlsx.NewFile()
-			sheet, err := xlsxFile.AddSheet(strings.TrimSuffix(c.filename, filepath.Ext(c.filename)))
+			sheet, err := xlsxFile.AddSheet(
+				strings.TrimSuffix(c.filename, filepath.Ext(c.filename)),
+			)
 			if err != nil {
 				return nil, fmt.Errorf("error creating a xlsx sheet %w", err)
 			}
@@ -100,7 +102,12 @@ func (c *Csv) ConvertTo(fileType, subType string, file io.Reader) (io.Reader, er
 				}
 			}
 
-			xlsxFile.Save(xlsxPath)
+			if err := xlsxFile.Save(xlsxPath); err != nil {
+				return nil, fmt.Errorf(
+					"error at saving the temporary csv file: %w",
+					err,
+				)
+			}
 
 			tmpCsvFile, err := os.Open(xlsxPath)
 			if err != nil {
@@ -109,7 +116,7 @@ func (c *Csv) ConvertTo(fileType, subType string, file io.Reader) (io.Reader, er
 					err,
 				)
 			}
-			defer tmpCsvFile.Close()
+			defer os.Remove(tmpCsvFile.Name())
 
 			// Creates the zip file that will be returned.
 			archive, err := os.Create(zipFileName)
@@ -119,6 +126,7 @@ func (c *Csv) ConvertTo(fileType, subType string, file io.Reader) (io.Reader, er
 					err,
 				)
 			}
+			defer os.Remove(archive.Name())
 
 			// Creates a Zip Writer to add files later on.
 			zipWriter := zip.NewWriter(archive)
