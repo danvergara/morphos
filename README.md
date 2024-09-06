@@ -109,5 +109,29 @@ A modal will pop up with a preview of the converted image.
 | CSV  |      |     |  ✅  |     |
 | XLSX |      |     |      | ✅  |
 
+## Ebooks X Ebooks
+
+|      | MOBI | EPUB |
+| ---- | ---- | --- |
+| EPUB | ✅   |     |
+| MOBI |      | ✅  |
+
+
+## Documents X Ebooks
+
+|      | EPUB | MOBI |
+| ---- | ---- | ---  |
+| PDF  | ✅   | ✅   |
+| DOCX |      |      |
+| CSV  |      |      |
+| XLSX |      |      |
+
+## Ebooks X Documents
+
+|      | PDF  |
+| ---- | ---- |
+| EPUB |  ✅  |
+| MOBI |  ✅  |
+
 ## License
 The MIT License (MIT). See [LICENSE](LICENSE) file for more details.
