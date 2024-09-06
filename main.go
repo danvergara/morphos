@@ -136,7 +136,7 @@ func handleUploadFile(w http.ResponseWriter, r *http.Request) error {
 		err               error
 	)
 
-	// parse and validate file and post parameters.
+	// Parse and validate file and post parameters.
 	file, fileHeader, err := r.FormFile(uploadFileFormField)
 	if err != nil {
 		log.Printf("error ocurred getting file from form: %v", err)
@@ -144,42 +144,52 @@ func handleUploadFile(w http.ResponseWriter, r *http.Request) error {
 	}
 	defer file.Close()
 
+	// Get the content of the file in form of a slice of bytes.
 	fileBytes, err := io.ReadAll(file)
 	if err != nil {
 		log.Printf("error ocurred reading file: %v", err)
 		return WithHTTPStatus(err, http.StatusBadRequest)
 	}
 
+	// Get the sub-type of the input file from the form.
 	targetFileSubType := r.FormValue("input_format")
 
+	// Call Detect fuction to get the mimetype of the input file.
 	detectedFileType := mimetype.Detect(fileBytes)
 
+	// Parse the mimetype to get the type and the sub-type of the input file.
 	fileType, subType, err := files.TypeAndSupType(detectedFileType.String())
 	if err != nil {
 		log.Printf("error occurred getting type and subtype from mimetype: %v", err)
 		return WithHTTPStatus(err, http.StatusBadRequest)
 	}
 
+	// Get the right factory based off the input file type.
 	fileFactory, err := files.BuildFactory(fileType, fileHeader.Filename)
 	if err != nil {
 		log.Printf("error occurred while getting a file factory: %v", err)
 		return WithHTTPStatus(err, http.StatusBadRequest)
 	}
 
+	// Returns an object that implements the File interface based on the sub-type of the input file.
 	f, err := fileFactory.NewFile(subType)
 	if err != nil {
 		log.Printf("error occurred getting the file object: %v", err)
 		return WithHTTPStatus(err, http.StatusBadRequest)
 	}
 
+	// Return the kind of the output file.
 	targetFileType := files.SupportedFileTypes()[targetFileSubType]
+
+	// Convert the file to the target format.
+	// convertedFile is an io.Reader.
 	convertedFile, err = f.ConvertTo(
 		cases.Title(language.English).String(targetFileType),
 		targetFileSubType,
 		bytes.NewReader(fileBytes),
 	)
 	if err != nil {
-		log.Printf("error ocurred while converting image %v", err)
+		log.Printf("error ocurred while processing the input file: %v", err)
 		return WithHTTPStatus(err, http.StatusInternalServerError)
 	}
 
@@ -193,18 +203,20 @@ func handleUploadFile(w http.ResponseWriter, r *http.Request) error {
 
 	newFile, err := os.Create(convertedFilePath)
 	if err != nil {
-		log.Printf("error occurred converting file: %v", err)
+		log.Printf("error occurred while creating the output file: %v", err)
 		return WithHTTPStatus(err, http.StatusInternalServerError)
 	}
 	defer newFile.Close()
 
 	buf := new(bytes.Buffer)
 	if _, err := buf.ReadFrom(convertedFile); err != nil {
+		log.Printf("error occurred while readinf from the converted file: %v", err)
+		return WithHTTPStatus(err, http.StatusInternalServerError)
 	}
 
 	convertedFileBytes := buf.Bytes()
 	if _, err := newFile.Write(convertedFileBytes); err != nil {
-		log.Printf("error occurred writing file: %v", err)
+		log.Printf("error occurred writing converted output to a file in disk: %v", err)
 		return WithHTTPStatus(err, http.StatusInternalServerError)
 	}
 
