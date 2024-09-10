@@ -22,6 +22,7 @@ import (
 	"golang.org/x/image/tiff"
 
 	"github.com/danvergara/morphos/pkg/files/images"
+	"github.com/danvergara/morphos/pkg/util"
 )
 
 // Pdf struct implements the File and Document interface from the file package.
@@ -33,7 +34,7 @@ type Pdf struct {
 }
 
 // NewPdf returns a pointer to Pdf.
-func NewPdf(filename string) *Pdf {
+func NewPdf(filename string) Pdf {
 	p := Pdf{
 		filename: filename,
 		compatibleFormats: map[string][]string{
@@ -49,6 +50,10 @@ func NewPdf(filename string) *Pdf {
 			"Document": {
 				DOCX,
 			},
+			"Ebook": {
+				EPUB,
+				MOBI,
+			},
 		},
 		compatibleMIMETypes: map[string][]string{
 			"Image": {
@@ -63,28 +68,32 @@ func NewPdf(filename string) *Pdf {
 			"Document": {
 				DOCXMIMEType,
 			},
+			"Ebook": {
+				EpubMimeType,
+				MobiMimeType,
+			},
 		},
 	}
 
-	return &p
+	return p
 }
 
 // SupportedFormats returns a map witht the compatible formats that Pdf is
 // compatible to be converted to.
-func (p *Pdf) SupportedFormats() map[string][]string {
+func (p Pdf) SupportedFormats() map[string][]string {
 	return p.compatibleFormats
 }
 
 // SupportedMIMETypes returns a map witht the compatible MIME types that Pdf is
 // compatible to be converted to.
-func (p *Pdf) SupportedMIMETypes() map[string][]string {
+func (p Pdf) SupportedMIMETypes() map[string][]string {
 	return p.compatibleMIMETypes
 }
 
 // ConvertTo converts the current PDF file to another given format.
 // This method receives the file type, the sub-type and the file as an slice of bytes.
 // Returns the converted file as an slice of bytes, if something wrong happens, an error is returned.
-func (p *Pdf) ConvertTo(fileType, subType string, file io.Reader) (io.Reader, error) {
+func (p Pdf) ConvertTo(fileType, subType string, file io.Reader) (io.Reader, error) {
 	// These are guard clauses that check if the target file type is valid.
 	compatibleFormats, ok := p.SupportedFormats()[fileType]
 	if !ok {
@@ -102,6 +111,7 @@ func (p *Pdf) ConvertTo(fileType, subType string, file io.Reader) (io.Reader, er
 			err,
 		)
 	}
+
 	fileBytes := buf.Bytes()
 
 	// If the file type is valid, figures out how to go ahead.
@@ -114,19 +124,20 @@ func (p *Pdf) ConvertTo(fileType, subType string, file io.Reader) (io.Reader, er
 		}
 
 		// Parses the file name of the Zip file.
-		zipFileName := filepath.Join("/tmp", fmt.Sprintf(
+		zipFileName := fmt.Sprintf(
 			"%s.zip",
 			strings.TrimSuffix(p.filename, filepath.Ext(p.filename)),
-		))
+		)
 
 		// Creates the zip file that will be returned.
-		archive, err := os.Create(zipFileName)
+		archive, err := os.CreateTemp("", zipFileName)
 		if err != nil {
 			return nil, fmt.Errorf(
 				"ConvertTo: error at creating the zip file to store the images: %w",
 				err,
 			)
 		}
+		defer os.Remove(archive.Name())
 
 		// Creates a Zip Writer to add files later on.
 		zipWriter := zip.NewWriter(archive)
@@ -140,8 +151,6 @@ func (p *Pdf) ConvertTo(fileType, subType string, file io.Reader) (io.Reader, er
 				subType,
 			)
 
-			tmpImgFileMame := filepath.Join("/tmp", imgFileName)
-
 			// Converts the current pdf page to an image.Image.
 			img, err := doc.Image(n)
 			if err != nil {
@@ -153,7 +162,7 @@ func (p *Pdf) ConvertTo(fileType, subType string, file io.Reader) (io.Reader, er
 			}
 
 			// Saves the image on disk.
-			imgFile, err := os.Create(tmpImgFileMame)
+			imgFile, err := os.Create(fmt.Sprintf("/tmp/%s", imgFileName))
 			if err != nil {
 				return nil, fmt.Errorf(
 					"ConvertTo: error at storing the pdf image from the page #%d: %w",
@@ -224,7 +233,7 @@ func (p *Pdf) ConvertTo(fileType, subType string, file io.Reader) (io.Reader, er
 			imgFile.Close()
 
 			// Opens the image to add it to the zip file.
-			imgFile, err = os.Open(tmpImgFileMame)
+			imgFile, err = os.Open(imgFile.Name())
 			if err != nil {
 				return nil, fmt.Errorf(
 					"ConvertTo: error at storing the pdf image from the page #%d: %w",
@@ -232,10 +241,9 @@ func (p *Pdf) ConvertTo(fileType, subType string, file io.Reader) (io.Reader, er
 					err,
 				)
 			}
-			defer imgFile.Close()
 
 			// Adds the image to the zip file.
-			w1, err := zipWriter.Create(imgFileName)
+			w1, err := zipWriter.Create(filepath.Base(imgFile.Name()))
 			if err != nil {
 				return nil, fmt.Errorf(
 					"ConvertTo: error at creating a zip writer to store the page #%d: %w",
@@ -251,6 +259,9 @@ func (p *Pdf) ConvertTo(fileType, subType string, file io.Reader) (io.Reader, er
 					err,
 				)
 			}
+
+			imgFile.Close()
+			os.Remove(imgFile.Name())
 		}
 
 		// Closes both zip writer and the zip file after its done with the writing.
@@ -258,7 +269,7 @@ func (p *Pdf) ConvertTo(fileType, subType string, file io.Reader) (io.Reader, er
 		archive.Close()
 
 		// Reads the zip file as an slice of bytes.
-		zipFile, err := os.ReadFile(zipFileName)
+		zipFile, err := os.ReadFile(archive.Name())
 		if err != nil {
 			return nil, fmt.Errorf("error reading zip file: %v", err)
 		}
@@ -272,23 +283,18 @@ func (p *Pdf) ConvertTo(fileType, subType string, file io.Reader) (io.Reader, er
 				stderr bytes.Buffer
 			)
 
-			pdfFilename := filepath.Join("/tmp", p.filename)
 			docxFileName := fmt.Sprintf(
 				"%s.docx",
 				strings.TrimSuffix(p.filename, filepath.Ext(p.filename)),
 			)
-			tmpDocxFileName := filepath.Join("/tmp", fmt.Sprintf(
-				"%s.docx",
-				strings.TrimSuffix(p.filename, filepath.Ext(p.filename)),
-			))
 
 			// Parses the file name of the Zip file.
-			zipFileName := filepath.Join("/tmp", fmt.Sprintf(
+			zipFileName := fmt.Sprintf(
 				"%s.zip",
 				strings.TrimSuffix(p.filename, filepath.Ext(p.filename)),
-			))
+			)
 
-			pdfFile, err := os.Create(pdfFilename)
+			pdfFile, err := os.CreateTemp("", p.filename)
 			if err != nil {
 				return nil, fmt.Errorf(
 					"error creating file to store the incoming pdf locally %s: %w",
@@ -296,7 +302,7 @@ func (p *Pdf) ConvertTo(fileType, subType string, file io.Reader) (io.Reader, er
 					err,
 				)
 			}
-			defer pdfFile.Close()
+			defer os.Remove(pdfFile.Name())
 
 			if _, err := pdfFile.Write(fileBytes); err != nil {
 				return nil, fmt.Errorf(
@@ -306,19 +312,20 @@ func (p *Pdf) ConvertTo(fileType, subType string, file io.Reader) (io.Reader, er
 				)
 			}
 
-			tmpDocxFile, err := os.Create(tmpDocxFileName)
+			tmpDocxFile, err := os.CreateTemp("", docxFileName)
 			if err != nil {
 				return nil, fmt.Errorf(
 					"error at creating the temporary docx file to store the docx content: %w",
 					err,
 				)
 			}
+			defer os.Remove(tmpDocxFile.Name())
 
 			cmdStr := "libreoffice --headless --infilter='writer_pdf_import' --convert-to %s --outdir %s %q"
 			cmd := exec.Command(
 				"bash",
 				"-c",
-				fmt.Sprintf(cmdStr, `docx:"MS Word 2007 XML"`, "/tmp", pdfFilename),
+				fmt.Sprintf(cmdStr, `docx:"MS Word 2007 XML"`, "/tmp", pdfFile.Name()),
 			)
 
 			cmd.Stdout = &stdout
@@ -342,7 +349,7 @@ func (p *Pdf) ConvertTo(fileType, subType string, file io.Reader) (io.Reader, er
 
 			tmpDocxFile.Close()
 
-			tmpDocxFile, err = os.Open(tmpDocxFileName)
+			tmpDocxFile, err = os.Open(tmpDocxFile.Name())
 			if err != nil {
 				return nil, fmt.Errorf(
 					"error at opening the docx file: %w",
@@ -352,13 +359,14 @@ func (p *Pdf) ConvertTo(fileType, subType string, file io.Reader) (io.Reader, er
 			defer tmpDocxFile.Close()
 
 			// Creates the zip file that will be returned.
-			archive, err := os.Create(zipFileName)
+			archive, err := os.CreateTemp("", zipFileName)
 			if err != nil {
 				return nil, fmt.Errorf(
 					"error at creating the zip file to store the docx file: %w",
 					err,
 				)
 			}
+			defer os.Remove(archive.Name())
 
 			// Creates a Zip Writer to add files later on.
 			zipWriter := zip.NewWriter(archive)
@@ -383,12 +391,19 @@ func (p *Pdf) ConvertTo(fileType, subType string, file io.Reader) (io.Reader, er
 			archive.Close()
 
 			// Reads the zip file as an slice of bytes.
-			zipFile, err := os.ReadFile(zipFileName)
+			zipFile, err := os.ReadFile(archive.Name())
 			if err != nil {
 				return nil, fmt.Errorf("error reading zip file: %v", err)
 			}
 
 			return bytes.NewReader(zipFile), nil
+		}
+	case ebookType:
+		switch subType {
+		case EPUB:
+			return util.EbookConvert(p.filename, PDF, EPUB, fileBytes)
+		case MOBI:
+			return util.EbookConvert(p.filename, PDF, MOBI, fileBytes)
 		}
 	}
 
@@ -396,6 +411,6 @@ func (p *Pdf) ConvertTo(fileType, subType string, file io.Reader) (io.Reader, er
 }
 
 // DocumentType returns the type of ducument of Pdf.
-func (p *Pdf) DocumentType() string {
+func (p Pdf) DocumentType() string {
 	return PDF
 }

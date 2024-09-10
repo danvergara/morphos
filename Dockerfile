@@ -25,7 +25,7 @@ FROM debian:trixie-slim AS release
 WORKDIR /
 
 RUN apt-get update \
-   && apt-get install -y --no-install-recommends default-jre libreoffice libreoffice-java-common ffmpeg \
+   && apt-get install -y --no-install-recommends default-jre libreoffice libreoffice-java-common ffmpeg calibre \
    && apt-get autoremove -y \
    && apt-get purge -y --auto-remove \
    && rm -rf /var/lib/apt/lists/*

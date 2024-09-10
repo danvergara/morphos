@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/danvergara/morphos/pkg/files/documents"
+	"github.com/danvergara/morphos/pkg/files/ebooks"
 )
 
 // DocumentFactory implements the FileFactory interface.
@@ -28,7 +29,11 @@ func (d *DocumentFactory) NewFile(f string) (File, error) {
 		return documents.NewXlsx(d.filename), nil
 	case documents.CSV:
 		return documents.NewCsv(d.filename), nil
+	case ebooks.EpubMimeType, ebooks.EPUB:
+		return ebooks.NewEpub(d.filename), nil
+	case ebooks.MobiMimeType, ebooks.MOBI:
+		return ebooks.NewMobi(d.filename), nil
 	default:
-		return nil, fmt.Errorf("type file file  %s not recognized", f)
+		return nil, fmt.Errorf("type file  %s not recognized", f)
 	}
 }
