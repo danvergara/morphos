@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"context"
 	"embed"
 	"errors"
 	"fmt"
@@ -10,8 +11,12 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"os/signal"
 	"path/filepath"
 	"strings"
+	"sync"
+	"syscall"
+	"time"
 
 	"github.com/gabriel-vasile/mimetype"
 	"github.com/go-chi/chi/v5"
@@ -290,8 +295,13 @@ func handleFileFormat(w http.ResponseWriter, r *http.Request) error {
 	}
 
 	tmpl, err := template.ParseFS(templatesHTML, templates...)
-	if err = tmpl.ExecuteTemplate(w, "format-elements", f.SupportedFormats()); err != nil {
+	if err != nil {
 		log.Printf("error occurred parsing template files: %v", err)
+		return WithHTTPStatus(err, http.StatusInternalServerError)
+	}
+
+	if err = tmpl.ExecuteTemplate(w, "format-elements", f.SupportedFormats()); err != nil {
+		log.Printf("error occurred executing template files: %v", err)
 		return WithHTTPStatus(err, http.StatusInternalServerError)
 	}
 
@@ -320,13 +330,7 @@ func handleModal(w http.ResponseWriter, r *http.Request) error {
 	return nil
 }
 
-func main() {
-	port := os.Getenv("MORPHOS_PORT")
-	// default port.
-	if port == "" {
-		port = "8080"
-	}
-
+func newRouter() http.Handler {
 	r := chi.NewRouter()
 	r.Use(middleware.Logger)
 
@@ -335,21 +339,90 @@ func main() {
 	var staticFS = http.FS(staticFiles)
 	fs := http.FileServer(staticFS)
 
+	addRoutes(r, fs, fsUpload)
+
+	return r
+}
+
+func addRoutes(r *chi.Mux, fs, fsUpload http.Handler) {
+	r.HandleFunc("/healthz", healthz)
 	r.Handle("/static/*", fs)
 	r.Handle("/files/*", http.StripPrefix("/files", fsUpload))
 	r.Get("/", toHandler(index))
 	r.Post("/upload", toHandler(handleUploadFile))
 	r.Post("/format", toHandler(handleFileFormat))
 	r.Get("/modal", toHandler(handleModal))
+}
 
-	http.ListenAndServe(fmt.Sprintf(":%s", port), r)
+func run(ctx context.Context) error {
+	port := os.Getenv("MORPHOS_PORT")
+
+	// default port.
+	if port == "" {
+		port = "8080"
+	}
+
+	ctx, stop := signal.NotifyContext(ctx,
+		os.Interrupt,
+		syscall.SIGTERM,
+		syscall.SIGQUIT)
+	defer stop()
+
+	r := newRouter()
+
+	srv := &http.Server{
+		Addr:    fmt.Sprintf(":%s", port),
+		Handler: r,
+	}
+
+	go func() {
+		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+			fmt.Fprintf(os.Stderr, "error listening and serving: %s\n", err)
+		}
+	}()
+
+	var wg sync.WaitGroup
+	wg.Add(1)
+
+	go func() {
+		defer wg.Done()
+		<-ctx.Done()
+
+		log.Println("shutdown signal received")
+
+		ctxTimeout, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+		defer cancel()
+
+		srv.SetKeepAlivesEnabled(false)
+
+		if err := srv.Shutdown(ctxTimeout); err != nil {
+			fmt.Fprintf(os.Stderr, "error shutting down http server: %s\n", err)
+		}
+
+		log.Println("shutdown completed")
+	}()
+
+	wg.Wait()
+
+	return nil
+}
+
+func main() {
+	ctx := context.Background()
+
+	if err := run(ctx); err != nil {
+		fmt.Fprintf(os.Stderr, "%s\n", err)
+		os.Exit(1)
+	}
+
+	log.Println("exiting...")
 }
 
 // renderError functions executes the error template.
 func renderError(w http.ResponseWriter, message string, statusCode int) {
 	w.WriteHeader(statusCode)
 	tmpl, _ := template.ParseFS(templatesHTML, "templates/partials/error.tmpl")
-	tmpl.ExecuteTemplate(w, "error", struct{ ErrorMessage string }{ErrorMessage: message})
+	_ = tmpl.ExecuteTemplate(w, "error", struct{ ErrorMessage string }{ErrorMessage: message})
 }
 
 func fileNameWithoutExtension(fileName string) string {
@@ -358,4 +431,8 @@ func fileNameWithoutExtension(fileName string) string {
 
 func filename(filename, extension string) string {
 	return fmt.Sprintf("%s.%s", fileNameWithoutExtension(filename), extension)
+}
+
+func healthz(w http.ResponseWriter, r *http.Request) {
+	w.WriteHeader(http.StatusOK)
 }
