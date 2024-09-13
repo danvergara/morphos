@@ -9,7 +9,7 @@
       {{if eq .FileType "image"}}
         <img src="/files/{{ .Filename }}" class="img-fluid" alt="Responsive image">
       {{else if eq .FileType "application"}}
-        <embed src="/files/{{ .Filename }}" width="500" height="375">
+        <img src="/static/zip-icon.png" class="img-fluid" alt="Responsive image">
       {{end}}
       </div>
       <div class="modal-footer">
