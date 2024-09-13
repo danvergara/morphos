@@ -1,7 +1,6 @@
 HTMX_VERSION=1.9.6
 RESPONSE_TARGETS_VERSION=1.9.11
 BOOTSTRAP_VERSION=5.3.2
-GO_VERSION=1.21.5
 
 .PHONY: run
 ## run: Runs the air command.
@@ -27,11 +26,11 @@ download-bootstrap:
 .PHONY: docker-build
 ## docker-build: Builds the container image
 docker-build:
-	docker build --build-arg="GO_VERSION=${GO_VERSION}" -t morphos .
+	docker build -t morphos .
 
 .PHONY: docker-run
 ## docker-run: Runs the container
-docker-run:
+docker-run: 
 	docker run --rm -p 8080:8080 -v /tmp:/tmp morphos
 
 .PHONY: help
