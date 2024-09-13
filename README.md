@@ -68,6 +68,13 @@ A modal will pop up with a preview of the converted image.
 
 <img src="screenshots/modal_morphos.png"/>
 
+### Configuration
+
+The configuration is only done by the environment varibles shown below.
+
+* `MORPHOS_PORT` changes the port the server will listen to (default is `8080`)
+* `MORPHOS_UPLOAD_PATH` defines the temporary path the files will be stored on disk (default is `/tmp`)
+
 ## Supported Files And Convert Matrix
 
 ### Images X Images

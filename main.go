@@ -44,7 +44,7 @@ var (
 )
 
 func init() {
-	uploadPath = os.Getenv("TMP_DIR")
+	uploadPath = os.Getenv("MORPHOS_UPLOAD_PATH")
 	if uploadPath == "" {
 		uploadPath = "/tmp"
 	}
