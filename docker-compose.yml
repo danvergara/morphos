@@ -2,6 +2,10 @@ name: morphos
 services:
   morphos-server:
     image: ghcr.io/danvergara/morphos-server:latest
+    # uncomment this if you want to build the container yourself.
+    # build:
+    #   context: .
+    #   target: release
     ports:
       - 8080:8080
     volumes:
