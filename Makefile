@@ -30,7 +30,7 @@ docker-build:
 
 .PHONY: docker-run
 ## docker-run: Runs the container
-docker-run: 
+docker-run: docker-build
 	docker run --rm -p 8080:8080 -v /tmp:/tmp morphos
 
 .PHONY: help
