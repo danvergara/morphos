@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"embed"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"html/template"
@@ -330,6 +331,120 @@ func handleModal(w http.ResponseWriter, r *http.Request) error {
 	return nil
 }
 
+func getFormats(w http.ResponseWriter, r *http.Request) error {
+	resp, err := json.Marshal(supportedFormatsJSONResponse())
+	if err != nil {
+		log.Printf("error ocurred marshalling the response: %v", err)
+		return WithHTTPStatus(err, http.StatusInternalServerError)
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	if _, err := w.Write(resp); err != nil {
+		log.Printf("error ocurred writting to the ResponseWriter : %v", err)
+		return WithHTTPStatus(err, http.StatusInternalServerError)
+	}
+
+	return nil
+}
+
+func uploadFile(w http.ResponseWriter, r *http.Request) error {
+	var (
+		convertedFile     io.Reader
+		convertedFilePath string
+		convertedFileName string
+		err               error
+	)
+
+	file, fileHeader, err := r.FormFile(uploadFileFormField)
+	if err != nil {
+		log.Printf("error ocurred getting file from form: %v", err)
+		return WithHTTPStatus(err, http.StatusBadRequest)
+	}
+	defer file.Close()
+
+	targetFileSubType := r.FormValue("targetFormat")
+
+	fileBytes, err := io.ReadAll(file)
+	if err != nil {
+		log.Printf("error ocurred reading file: %v", err)
+		return WithHTTPStatus(err, http.StatusInternalServerError)
+	}
+
+	// Call Detect fuction to get the mimetype of the input file.
+	detectedFileType := mimetype.Detect(fileBytes)
+
+	// Parse the mimetype to get the type and the sub-type of the input file.
+	fileType, subType, err := files.TypeAndSupType(detectedFileType.String())
+	if err != nil {
+		log.Printf("error occurred getting type and subtype from mimetype: %v", err)
+		return WithHTTPStatus(err, http.StatusBadRequest)
+
+	}
+	// Get the right factory based off the input file type.
+	fileFactory, err := files.BuildFactory(fileType, fileHeader.Filename)
+	if err != nil {
+		log.Printf("error occurred while getting a file factory: %v", err)
+		return WithHTTPStatus(err, http.StatusBadRequest)
+	}
+
+	f, err := fileFactory.NewFile(subType)
+	if err != nil {
+		log.Printf("error occurred getting the file object: %v", err)
+		return WithHTTPStatus(err, http.StatusBadRequest)
+	}
+
+	// Return the kind of the output file.
+	targetFileType := files.SupportedFileTypes()[targetFileSubType]
+
+	// Convert the file to the target format.
+	// convertedFile is an io.Reader.
+	convertedFile, err = f.ConvertTo(
+		cases.Title(language.English).String(targetFileType),
+		targetFileSubType,
+		bytes.NewReader(fileBytes),
+	)
+	if err != nil {
+		log.Printf("error ocurred while processing the input file: %v", err)
+		return WithHTTPStatus(err, http.StatusInternalServerError)
+	}
+
+	switch fileType {
+	case "application", "text":
+		targetFileSubType = "zip"
+	}
+
+	convertedFileName = filename(fileHeader.Filename, targetFileSubType)
+	convertedFilePath = filepath.Join(uploadPath, convertedFileName)
+
+	newFile, err := os.Create(convertedFilePath)
+	if err != nil {
+		log.Printf("error occurred while creating the output file: %v", err)
+		return WithHTTPStatus(err, http.StatusInternalServerError)
+	}
+	defer newFile.Close()
+
+	buf := new(bytes.Buffer)
+	if _, err := buf.ReadFrom(convertedFile); err != nil {
+		log.Printf("error occurred while readinf from the converted file: %v", err)
+		return WithHTTPStatus(err, http.StatusInternalServerError)
+	}
+
+	convertedFileBytes := buf.Bytes()
+	if _, err := newFile.Write(convertedFileBytes); err != nil {
+		log.Printf("error occurred writing converted output to a file in disk: %v", err)
+		return WithHTTPStatus(err, http.StatusInternalServerError)
+	}
+
+	w.WriteHeader(http.StatusOK)
+	w.Header().Set("Content-Type", "application/octet-stream")
+	if _, err := w.Write(convertedFileBytes); err != nil {
+		log.Printf("error occurred writing converted file to response writer: %v", err)
+		return WithHTTPStatus(err, http.StatusInternalServerError)
+	}
+
+	return nil
+}
+
 func newRouter() http.Handler {
 	r := chi.NewRouter()
 	r.Use(middleware.Logger)
@@ -344,6 +459,13 @@ func newRouter() http.Handler {
 	return r
 }
 
+func apiRouter() http.Handler {
+	r := chi.NewRouter()
+	r.Get("/formats", toHandler(getFormats))
+	r.Post("/upload", toHandler(uploadFile))
+	return r
+}
+
 func addRoutes(r *chi.Mux, fs, fsUpload http.Handler) {
 	r.HandleFunc("/healthz", healthz)
 	r.Handle("/static/*", fs)
@@ -352,6 +474,9 @@ func addRoutes(r *chi.Mux, fs, fsUpload http.Handler) {
 	r.Post("/upload", toHandler(handleUploadFile))
 	r.Post("/format", toHandler(handleFileFormat))
 	r.Get("/modal", toHandler(handleModal))
+
+	// Mount the api router.
+	r.Mount("/api/v1", apiRouter())
 }
 
 func run(ctx context.Context) error {
@@ -435,4 +560,14 @@ func filename(filename, extension string) string {
 
 func healthz(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
+}
+
+func supportedFormatsJSONResponse() map[string][]string {
+	result := make(map[string][]string)
+
+	for k, v := range files.SupportedFileTypes() {
+		result[v] = append(result[v], k)
+	}
+
+	return result
 }
