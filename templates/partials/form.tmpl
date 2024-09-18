@@ -24,7 +24,7 @@
         </div>
         <div class="col-sm">
           <label for="input-format" class="form-label">Formats to convert</label>
-          <select id="input-format" class="form-select" name="input_format">
+          <select id="input-format" class="form-select" name="targetFormat">
             {{ block "format-elements" . }}
               {{ range $family, $formats := . }}
                 <optgroup label="{{ $family }}">
