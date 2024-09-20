@@ -3,19 +3,21 @@
   <div class="modal-dialog modal-dialog-centered">
     <div class="modal-content">
       <div class="modal-header">
-        <h5 class="modal-title">{{ .Filename }}</h5>
+        <div class="modal-title" id="modal-title" title="{{ .Filename }}">
+          {{ .Filename }}
+        </div>
       </div>
       <div class="modal-body">
       {{if eq .FileType "image"}}
         <img src="/files/{{ .Filename }}" class="img-fluid" alt="Responsive image">
       {{else if eq .FileType "application"}}
-        <embed src="/files/{{ .Filename }}" width="500" height="375">
+        <img src="/static/zip-icon.png" class="img-fluid" alt="Responsive image">
       {{end}}
       </div>
       <div class="modal-footer">
         <a href="/files/{{ .Filename }}" download>
           <button class="btn btn-success">
-            Download {{ .Filename }}
+            Download
           </button>
         </a>
         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">

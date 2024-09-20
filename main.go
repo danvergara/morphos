@@ -2,7 +2,9 @@ package main
 
 import (
 	"bytes"
+	"context"
 	"embed"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"html/template"
@@ -10,8 +12,12 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"os/signal"
 	"path/filepath"
 	"strings"
+	"sync"
+	"syscall"
+	"time"
 
 	"github.com/gabriel-vasile/mimetype"
 	"github.com/go-chi/chi/v5"
@@ -39,7 +45,7 @@ var (
 )
 
 func init() {
-	uploadPath = os.Getenv("TMP_DIR")
+	uploadPath = os.Getenv("MORPHOS_UPLOAD_PATH")
 	if uploadPath == "" {
 		uploadPath = "/tmp"
 	}
@@ -129,95 +135,9 @@ func index(w http.ResponseWriter, _ *http.Request) error {
 }
 
 func handleUploadFile(w http.ResponseWriter, r *http.Request) error {
-	var (
-		convertedFile     io.Reader
-		convertedFilePath string
-		convertedFileName string
-		err               error
-	)
-
-	// Parse and validate file and post parameters.
-	file, fileHeader, err := r.FormFile(uploadFileFormField)
+	convertedFileName, convertedFileType, _, err := convertFile(r)
 	if err != nil {
-		log.Printf("error ocurred getting file from form: %v", err)
-		return WithHTTPStatus(err, http.StatusBadRequest)
-	}
-	defer file.Close()
-
-	// Get the content of the file in form of a slice of bytes.
-	fileBytes, err := io.ReadAll(file)
-	if err != nil {
-		log.Printf("error ocurred reading file: %v", err)
-		return WithHTTPStatus(err, http.StatusBadRequest)
-	}
-
-	// Get the sub-type of the input file from the form.
-	targetFileSubType := r.FormValue("input_format")
-
-	// Call Detect fuction to get the mimetype of the input file.
-	detectedFileType := mimetype.Detect(fileBytes)
-
-	// Parse the mimetype to get the type and the sub-type of the input file.
-	fileType, subType, err := files.TypeAndSupType(detectedFileType.String())
-	if err != nil {
-		log.Printf("error occurred getting type and subtype from mimetype: %v", err)
-		return WithHTTPStatus(err, http.StatusBadRequest)
-	}
-
-	// Get the right factory based off the input file type.
-	fileFactory, err := files.BuildFactory(fileType, fileHeader.Filename)
-	if err != nil {
-		log.Printf("error occurred while getting a file factory: %v", err)
-		return WithHTTPStatus(err, http.StatusBadRequest)
-	}
-
-	// Returns an object that implements the File interface based on the sub-type of the input file.
-	f, err := fileFactory.NewFile(subType)
-	if err != nil {
-		log.Printf("error occurred getting the file object: %v", err)
-		return WithHTTPStatus(err, http.StatusBadRequest)
-	}
-
-	// Return the kind of the output file.
-	targetFileType := files.SupportedFileTypes()[targetFileSubType]
-
-	// Convert the file to the target format.
-	// convertedFile is an io.Reader.
-	convertedFile, err = f.ConvertTo(
-		cases.Title(language.English).String(targetFileType),
-		targetFileSubType,
-		bytes.NewReader(fileBytes),
-	)
-	if err != nil {
-		log.Printf("error ocurred while processing the input file: %v", err)
-		return WithHTTPStatus(err, http.StatusInternalServerError)
-	}
-
-	switch fileType {
-	case "application", "text":
-		targetFileSubType = "zip"
-	}
-
-	convertedFileName = filename(fileHeader.Filename, targetFileSubType)
-	convertedFilePath = filepath.Join(uploadPath, convertedFileName)
-
-	newFile, err := os.Create(convertedFilePath)
-	if err != nil {
-		log.Printf("error occurred while creating the output file: %v", err)
-		return WithHTTPStatus(err, http.StatusInternalServerError)
-	}
-	defer newFile.Close()
-
-	buf := new(bytes.Buffer)
-	if _, err := buf.ReadFrom(convertedFile); err != nil {
-		log.Printf("error occurred while readinf from the converted file: %v", err)
-		return WithHTTPStatus(err, http.StatusInternalServerError)
-	}
-
-	convertedFileBytes := buf.Bytes()
-	if _, err := newFile.Write(convertedFileBytes); err != nil {
-		log.Printf("error occurred writing converted output to a file in disk: %v", err)
-		return WithHTTPStatus(err, http.StatusInternalServerError)
+		return err
 	}
 
 	tmpls := []string{
@@ -228,14 +148,6 @@ func handleUploadFile(w http.ResponseWriter, r *http.Request) error {
 	tmpl, err := template.ParseFS(templatesHTML, tmpls...)
 	if err != nil {
 		log.Printf("error occurred parsing template files: %v", err)
-		return WithHTTPStatus(err, http.StatusInternalServerError)
-	}
-
-	convertedFileMimeType := mimetype.Detect(convertedFileBytes)
-
-	convertedFileType, _, err := files.TypeAndSupType(convertedFileMimeType.String())
-	if err != nil {
-		log.Printf("error occurred getting the file type of the result file: %v", err)
 		return WithHTTPStatus(err, http.StatusInternalServerError)
 	}
 
@@ -290,8 +202,13 @@ func handleFileFormat(w http.ResponseWriter, r *http.Request) error {
 	}
 
 	tmpl, err := template.ParseFS(templatesHTML, templates...)
-	if err = tmpl.ExecuteTemplate(w, "format-elements", f.SupportedFormats()); err != nil {
+	if err != nil {
 		log.Printf("error occurred parsing template files: %v", err)
+		return WithHTTPStatus(err, http.StatusInternalServerError)
+	}
+
+	if err = tmpl.ExecuteTemplate(w, "format-elements", f.SupportedFormats()); err != nil {
+		log.Printf("error occurred executing template files: %v", err)
 		return WithHTTPStatus(err, http.StatusInternalServerError)
 	}
 
@@ -320,13 +237,39 @@ func handleModal(w http.ResponseWriter, r *http.Request) error {
 	return nil
 }
 
-func main() {
-	port := os.Getenv("MORPHOS_PORT")
-	// default port.
-	if port == "" {
-		port = "8080"
+func getFormats(w http.ResponseWriter, r *http.Request) error {
+	resp, err := json.Marshal(supportedFormatsJSONResponse())
+	if err != nil {
+		log.Printf("error ocurred marshalling the response: %v", err)
+		return WithHTTPStatus(err, http.StatusInternalServerError)
 	}
 
+	w.Header().Set("Content-Type", "application/json")
+	if _, err := w.Write(resp); err != nil {
+		log.Printf("error ocurred writting to the ResponseWriter : %v", err)
+		return WithHTTPStatus(err, http.StatusInternalServerError)
+	}
+
+	return nil
+}
+
+func uploadFile(w http.ResponseWriter, r *http.Request) error {
+	_, _, convertedFileBytes, err := convertFile(r)
+	if err != nil {
+		return err
+	}
+
+	w.WriteHeader(http.StatusOK)
+	w.Header().Set("Content-Type", "application/octet-stream")
+	if _, err := w.Write(convertedFileBytes); err != nil {
+		log.Printf("error occurred writing converted file to response writer: %v", err)
+		return WithHTTPStatus(err, http.StatusInternalServerError)
+	}
+
+	return nil
+}
+
+func newRouter() http.Handler {
 	r := chi.NewRouter()
 	r.Use(middleware.Logger)
 
@@ -335,6 +278,20 @@ func main() {
 	var staticFS = http.FS(staticFiles)
 	fs := http.FileServer(staticFS)
 
+	addRoutes(r, fs, fsUpload)
+
+	return r
+}
+
+func apiRouter() http.Handler {
+	r := chi.NewRouter()
+	r.Get("/formats", toHandler(getFormats))
+	r.Post("/upload", toHandler(uploadFile))
+	return r
+}
+
+func addRoutes(r *chi.Mux, fs, fsUpload http.Handler) {
+	r.HandleFunc("/healthz", healthz)
 	r.Handle("/static/*", fs)
 	r.Handle("/files/*", http.StripPrefix("/files", fsUpload))
 	r.Get("/", toHandler(index))
@@ -342,14 +299,79 @@ func main() {
 	r.Post("/format", toHandler(handleFileFormat))
 	r.Get("/modal", toHandler(handleModal))
 
-	http.ListenAndServe(fmt.Sprintf(":%s", port), r)
+	// Mount the api router.
+	r.Mount("/api/v1", apiRouter())
+}
+
+func run(ctx context.Context) error {
+	port := os.Getenv("MORPHOS_PORT")
+
+	// default port.
+	if port == "" {
+		port = "8080"
+	}
+
+	ctx, stop := signal.NotifyContext(ctx,
+		os.Interrupt,
+		syscall.SIGTERM,
+		syscall.SIGQUIT)
+	defer stop()
+
+	r := newRouter()
+
+	srv := &http.Server{
+		Addr:    fmt.Sprintf(":%s", port),
+		Handler: r,
+	}
+
+	go func() {
+		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+			fmt.Fprintf(os.Stderr, "error listening and serving: %s\n", err)
+		}
+	}()
+
+	var wg sync.WaitGroup
+	wg.Add(1)
+
+	go func() {
+		defer wg.Done()
+		<-ctx.Done()
+
+		log.Println("shutdown signal received")
+
+		ctxTimeout, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+		defer cancel()
+
+		srv.SetKeepAlivesEnabled(false)
+
+		if err := srv.Shutdown(ctxTimeout); err != nil {
+			fmt.Fprintf(os.Stderr, "error shutting down http server: %s\n", err)
+		}
+
+		log.Println("shutdown completed")
+	}()
+
+	wg.Wait()
+
+	return nil
+}
+
+func main() {
+	ctx := context.Background()
+
+	if err := run(ctx); err != nil {
+		fmt.Fprintf(os.Stderr, "%s\n", err)
+		os.Exit(1)
+	}
+
+	log.Println("exiting...")
 }
 
 // renderError functions executes the error template.
 func renderError(w http.ResponseWriter, message string, statusCode int) {
 	w.WriteHeader(statusCode)
 	tmpl, _ := template.ParseFS(templatesHTML, "templates/partials/error.tmpl")
-	tmpl.ExecuteTemplate(w, "error", struct{ ErrorMessage string }{ErrorMessage: message})
+	_ = tmpl.ExecuteTemplate(w, "error", struct{ ErrorMessage string }{ErrorMessage: message})
 }
 
 func fileNameWithoutExtension(fileName string) string {
@@ -358,4 +380,128 @@ func fileNameWithoutExtension(fileName string) string {
 
 func filename(filename, extension string) string {
 	return fmt.Sprintf("%s.%s", fileNameWithoutExtension(filename), extension)
+}
+
+func healthz(w http.ResponseWriter, r *http.Request) {
+	w.WriteHeader(http.StatusOK)
+}
+
+// convertFile handles everything required to convert a file.
+// It returns the name of the file, the target file type, the file as a slice of bytes and a possible error.
+// It is both used by the HTML form and the API.
+func convertFile(r *http.Request) (string, string, []byte, error) {
+	var (
+		convertedFile     io.Reader
+		convertedFilePath string
+		convertedFileName string
+		err               error
+	)
+
+	// Parse and validate file and post parameters.
+	file, fileHeader, err := r.FormFile(uploadFileFormField)
+	if err != nil {
+		log.Printf("error ocurred getting file from form: %v", err)
+		return "", "", nil, WithHTTPStatus(err, http.StatusBadRequest)
+	}
+	defer file.Close()
+
+	// Get the content of the file in form of a slice of bytes.
+	fileBytes, err := io.ReadAll(file)
+	if err != nil {
+		log.Printf("error ocurred reading file: %v", err)
+		return "", "", nil, WithHTTPStatus(err, http.StatusBadRequest)
+	}
+
+	// Get the sub-type of the input file from the form.
+	targetFileSubType := r.FormValue("targetFormat")
+
+	// Call Detect fuction to get the mimetype of the input file.
+	detectedFileType := mimetype.Detect(fileBytes)
+
+	// Parse the mimetype to get the type and the sub-type of the input file.
+	fileType, subType, err := files.TypeAndSupType(detectedFileType.String())
+	if err != nil {
+		log.Printf("error occurred getting type and subtype from mimetype: %v", err)
+		return "", "", nil, WithHTTPStatus(err, http.StatusBadRequest)
+	}
+
+	// Get the right factory based off the input file type.
+	fileFactory, err := files.BuildFactory(fileType, fileHeader.Filename)
+	if err != nil {
+		log.Printf("error occurred while getting a file factory: %v", err)
+		return "", "", nil, WithHTTPStatus(err, http.StatusBadRequest)
+	}
+
+	// Returns an object that implements the File interface based on the sub-type of the input file.
+	f, err := fileFactory.NewFile(subType)
+	if err != nil {
+		log.Printf("error occurred getting the file object: %v", err)
+		return "", "", nil, WithHTTPStatus(err, http.StatusBadRequest)
+	}
+
+	// Return the kind of the output file.
+	targetFileType := files.SupportedFileTypes()[targetFileSubType]
+
+	// Convert the file to the target format.
+	// convertedFile is an io.Reader.
+	convertedFile, err = f.ConvertTo(
+		cases.Title(language.English).String(targetFileType),
+		targetFileSubType,
+		bytes.NewReader(fileBytes),
+	)
+	if err != nil {
+		log.Printf("error ocurred while processing the input file: %v", err)
+		return "", "", nil, WithHTTPStatus(err, http.StatusInternalServerError)
+	}
+
+	switch fileType {
+	case "application", "text":
+		targetFileSubType = "zip"
+	}
+
+	convertedFileName = filename(fileHeader.Filename, targetFileSubType)
+	convertedFilePath = filepath.Join(uploadPath, convertedFileName)
+
+	newFile, err := os.Create(convertedFilePath)
+	if err != nil {
+		log.Printf("error occurred while creating the output file: %v", err)
+		return "", "", nil, WithHTTPStatus(err, http.StatusInternalServerError)
+	}
+	defer newFile.Close()
+
+	buf := new(bytes.Buffer)
+	if _, err := buf.ReadFrom(convertedFile); err != nil {
+		log.Printf("error occurred while readinf from the converted file: %v", err)
+		return "", "", nil, WithHTTPStatus(err, http.StatusInternalServerError)
+	}
+
+	convertedFileBytes := buf.Bytes()
+	if _, err := newFile.Write(convertedFileBytes); err != nil {
+		log.Printf("error occurred writing converted output to a file in disk: %v", err)
+		return "", "", nil, WithHTTPStatus(err, http.StatusInternalServerError)
+	}
+
+	convertedFileMimeType := mimetype.Detect(convertedFileBytes)
+
+	convertedFileType, _, err := files.TypeAndSupType(convertedFileMimeType.String())
+	if err != nil {
+		log.Printf("error occurred getting the file type of the result file: %v", err)
+		return "", "", nil, WithHTTPStatus(err, http.StatusInternalServerError)
+	}
+
+	return convertedFileName, convertedFileType, convertedFileBytes, nil
+}
+
+// supportedFormatsJSONResponse returns the supported formas as a map formatted to be shown as JSON.
+// The intention of this is showing the supported formats to the client.
+// Example:
+// {"documents": ["docx", "xls"], "image": ["png", "jpeg"]}
+func supportedFormatsJSONResponse() map[string][]string {
+	result := make(map[string][]string)
+
+	for k, v := range files.SupportedFileTypes() {
+		result[v] = append(result[v], k)
+	}
+
+	return result
 }

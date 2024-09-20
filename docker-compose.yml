@@ -1,8 +1,18 @@
 name: morphos
 services:
-    morphos-server:
-        ports:
-            - 8080:8080
-        volumes:
-            - /tmp:/tmp
-        image: ghcr.io/danvergara/morphos-server:latest
+  morphos-server:
+    image: ghcr.io/danvergara/morphos-server:latest
+    # uncomment this if you want to build the container yourself.
+    # build:
+    #   context: .
+    #   target: release
+    ports:
+      - 8080:8080
+    volumes:
+      - /tmp:/tmp
+    healthcheck:
+      test: timeout 10s bash -c ':> /dev/tcp/127.0.0.1/8080' || exit 1
+      interval: 60s
+      retries: 3
+      start_period: 20s
+      timeout: 30s

@@ -29,12 +29,17 @@
     }
   </script>
   <script>
-    htmx.on('htmx:load', function(evt) { updateName(); });
-    htmx.on(window, 'resize', function(evt) { updateName(); });
+    htmx.on('htmx:load', function(evt) { updateName('filename'); });
+    htmx.on(window, 'resize', function(evt) { updateName('filename'); });
+
+    const modal = document.getElementById('modals-here')
+    modal.addEventListener('shown.bs.modal', () => {
+      updateName('modal-title') 
+    })
 
     // Shorten the filename if it's too long to fit in the space available
-    function updateName() {
-      let filenameObj = document.getElementById('filename');
+    function updateName(id) {
+      let filenameObj = document.getElementById(id);
       if (!filenameObj) return; // Not on the download page
 
       let filename = filenameObj.title;

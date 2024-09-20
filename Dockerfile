@@ -35,6 +35,10 @@ COPY --from=builder /usr/share/fonts /usr/share/fonts
 
 ENV FONTCONFIG_PATH /usr/share/fonts
 
+# Use morphos as user
+RUN useradd -m morphos
+USER morphos
+
 EXPOSE 8080
 
 ENTRYPOINT ["/bin/morphos"]
