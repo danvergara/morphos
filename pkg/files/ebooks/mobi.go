@@ -18,7 +18,7 @@ type Mobi struct {
 	compatibleMIMETypes map[string][]string
 }
 
-func NewMobi(filename string) Mobi {
+func NewMobi(filename string) *Mobi {
 	m := Mobi{
 		filename: filename,
 		compatibleFormats: map[string][]string{
@@ -39,22 +39,22 @@ func NewMobi(filename string) Mobi {
 		},
 	}
 
-	return m
+	return &m
 }
 
 // SupportedFormats returns a map witht the compatible formats that MOBI is
 // compatible to be converted to.
-func (m Mobi) SupportedFormats() map[string][]string {
+func (m *Mobi) SupportedFormats() map[string][]string {
 	return m.compatibleFormats
 }
 
 // SupportedMIMETypes returns a map witht the compatible MIME types that MOBI is
 // compatible to be converted to.
-func (m Mobi) SupportedMIMETypes() map[string][]string {
+func (m *Mobi) SupportedMIMETypes() map[string][]string {
 	return m.compatibleMIMETypes
 }
 
-func (m Mobi) ConvertTo(fileType, subtype string, file io.Reader) (io.Reader, error) {
+func (m *Mobi) ConvertTo(fileType, subtype string, file io.Reader) (io.Reader, error) {
 	// These are guard clauses that check if the target file type is valid.
 	compatibleFormats, ok := m.SupportedFormats()[fileType]
 	if !ok {
@@ -92,6 +92,6 @@ func (m Mobi) ConvertTo(fileType, subtype string, file io.Reader) (io.Reader, er
 }
 
 // EbookType returns the Ebook type which is MOBI in this case.
-func (m Mobi) EbookType() string {
+func (m *Mobi) EbookType() string {
 	return EPUB
 }
