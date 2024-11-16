@@ -19,7 +19,7 @@ type Epub struct {
 	compatibleMIMETypes map[string][]string
 }
 
-func NewEpub(filename string) Epub {
+func NewEpub(filename string) *Epub {
 	e := Epub{
 		filename: filename,
 		compatibleFormats: map[string][]string{
@@ -40,22 +40,22 @@ func NewEpub(filename string) Epub {
 		},
 	}
 
-	return e
+	return &e
 }
 
 // SupportedFormats returns a map witht the compatible formats that Pdf is
 // compatible to be converted to.
-func (e Epub) SupportedFormats() map[string][]string {
+func (e *Epub) SupportedFormats() map[string][]string {
 	return e.compatibleFormats
 }
 
 // SupportedMIMETypes returns a map witht the compatible MIME types that Pdf is
 // compatible to be converted to.
-func (e Epub) SupportedMIMETypes() map[string][]string {
+func (e *Epub) SupportedMIMETypes() map[string][]string {
 	return e.compatibleMIMETypes
 }
 
-func (e Epub) ConvertTo(fileType, subtype string, file io.Reader) (io.Reader, error) {
+func (e *Epub) ConvertTo(fileType, subtype string, file io.Reader) (io.Reader, error) {
 	// These are guard clauses that check if the target file type is valid.
 	compatibleFormats, ok := e.SupportedFormats()[fileType]
 	if !ok {
@@ -93,6 +93,6 @@ func (e Epub) ConvertTo(fileType, subtype string, file io.Reader) (io.Reader, er
 }
 
 // EbookType returns the Ebook type which is Epub in this case.
-func (e Epub) EbookType() string {
+func (e *Epub) EbookType() string {
 	return EPUB
 }

@@ -34,7 +34,7 @@ type Pdf struct {
 }
 
 // NewPdf returns a pointer to Pdf.
-func NewPdf(filename string) Pdf {
+func NewPdf(filename string) *Pdf {
 	p := Pdf{
 		filename: filename,
 		compatibleFormats: map[string][]string{
@@ -75,25 +75,25 @@ func NewPdf(filename string) Pdf {
 		},
 	}
 
-	return p
+	return &p
 }
 
 // SupportedFormats returns a map witht the compatible formats that Pdf is
 // compatible to be converted to.
-func (p Pdf) SupportedFormats() map[string][]string {
+func (p *Pdf) SupportedFormats() map[string][]string {
 	return p.compatibleFormats
 }
 
 // SupportedMIMETypes returns a map witht the compatible MIME types that Pdf is
 // compatible to be converted to.
-func (p Pdf) SupportedMIMETypes() map[string][]string {
+func (p *Pdf) SupportedMIMETypes() map[string][]string {
 	return p.compatibleMIMETypes
 }
 
 // ConvertTo converts the current PDF file to another given format.
 // This method receives the file type, the sub-type and the file as an slice of bytes.
 // Returns the converted file as an slice of bytes, if something wrong happens, an error is returned.
-func (p Pdf) ConvertTo(fileType, subType string, file io.Reader) (io.Reader, error) {
+func (p *Pdf) ConvertTo(fileType, subType string, file io.Reader) (io.Reader, error) {
 	// These are guard clauses that check if the target file type is valid.
 	compatibleFormats, ok := p.SupportedFormats()[fileType]
 	if !ok {
@@ -411,6 +411,6 @@ func (p Pdf) ConvertTo(fileType, subType string, file io.Reader) (io.Reader, err
 }
 
 // DocumentType returns the type of ducument of Pdf.
-func (p Pdf) DocumentType() string {
+func (p *Pdf) DocumentType() string {
 	return PDF
 }
