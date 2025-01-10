@@ -319,6 +319,12 @@ func run(ctx context.Context) error {
 
 	r := newRouter()
 
+	port = strings.TrimPrefix(port, "tcp://")
+	port = strings.TrimPrefix(port, "http://")
+	if strings.Contains(port, ":") {
+		port = strings.Split(port, ":")[1]
+	}
+
 	srv := &http.Server{
 		Addr:    fmt.Sprintf(":%s", port),
 		Handler: r,
